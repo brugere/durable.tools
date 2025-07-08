@@ -1,7 +1,7 @@
-version: "3.9"
 services:
   db:
     image: postgres:16
+    platform: linux/arm64
     environment:
       POSTGRES_PASSWORD: postgres
     ports: ["5432:5432"]
@@ -16,7 +16,10 @@ services:
     ports: ["8000:8000"]
   frontend:
     build: ./frontend
+    volumes: ["./frontend:/app"] 
     command: npm run dev
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000 
     depends_on: [backend]
     ports: ["3000:3000"]
 volumes:

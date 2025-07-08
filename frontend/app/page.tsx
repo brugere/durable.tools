@@ -1,3 +1,8 @@
+// frontend/app/page.tsx
+export const dynamic = "force-dynamic";   // add this
+
+
+
 import { Suspense } from "react";
 import SearchBox from "@/components/SearchBox";
 import Results from "@/components/Results";

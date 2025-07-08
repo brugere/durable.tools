@@ -1,0 +1,29 @@
+# === Node / React ===
+node_modules/
+npm-debug.log*
+.env.local
+.env.*
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.pyd
+*.pyo
+.env/               # pyenv/virtualenv
+
+# === OS / Editor ===
+.DS_Store
+.idea/
+.vscode/
+
+# === Build & coverage ===
+dist/
+build/
+coverage/
+*.coverage
+
+# === Secrets & keys ===
+*.pem
+*.pfx
+*.key
+
