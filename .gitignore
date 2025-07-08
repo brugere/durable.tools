@@ -3,6 +3,9 @@ node_modules/
 npm-debug.log*
 .env.local
 .env.*
+.next/
+
+
 
 # === Python ===
 __pycache__/
