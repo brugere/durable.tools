@@ -3,7 +3,14 @@ uvicorn[standard]==0.29.0
 SQLAlchemy==2.0.30
 asyncpg==0.29.0
 alembic==1.13.1
-pydantic==2.7.1
+pydantic
 python-dotenv==1.0.1
-
-
+pandas==2.2.3
+numpy>=1.26.0
+requests==2.32.3
+langchain-openai==0.3.1
+langchain-core>=0.3.30
+langchain-experimental==0.3.1
+langchain-community==0.3.1
+langchain-text-splitters==0.3.1
+langchain-text-splitters==0.3.1
