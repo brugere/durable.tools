@@ -3,7 +3,7 @@ from typing import List, Optional
 import json
 
 # Use absolute import for helpers from fetch_wmdi.py
-from ingest.fetch_wmdi import load_dataset_as_dataframe, quick_insights, NpEncoder
+from ingest.fetch_wmdi import load_dataset_as_dataframe, quick_insights, NpEncoder, fetch_all_datasets
 
 router = APIRouter()
 
@@ -42,4 +42,15 @@ def get_dataset_summary(dataset_id: str, limit: int = 100):
     # Optionally limit the sample rows in the summary
     if "head" in summary and isinstance(summary["head"], list):
         summary["head"] = summary["head"][:limit]
-    return json.loads(json.dumps(summary, cls=NpEncoder)) 
+    return json.loads(json.dumps(summary, cls=NpEncoder))
+
+@router.get("/datasets")
+def get_all_datasets(limit: int = 100):
+    """
+    Fetch a list of datasets from data.gouv.fr and return their metadata.
+    """
+    try:
+        datasets = fetch_all_datasets(limit=limit)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch datasets: {e}")
+    return json.loads(json.dumps(datasets, cls=NpEncoder)) 

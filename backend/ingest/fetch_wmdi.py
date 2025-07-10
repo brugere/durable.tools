@@ -91,6 +91,27 @@ def load_dataset_as_dataframe(dataset_id: str) -> pd.DataFrame:
     data = requests.get(url, timeout=30).json()
     return pd.json_normalize(data)
 
+def fetch_all_datasets(limit: int = 100) -> list[dict]:
+    """
+    Fetch a list of datasets from data.gouv.fr (API v2). Supports pagination and limiting the number of results.
+    """
+    datasets = []
+    page = 1
+    page_size = min(limit, 100)  # API max page size is 100
+    while len(datasets) < limit:
+        url = f"{DGOUV_BASE_V1}/datasets/?page={page}&page_size={page_size}"
+        resp = requests.get(url, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+        page_datasets = data.get("data", [])
+        if not page_datasets:
+            break
+        datasets.extend(page_datasets)
+        if len(page_datasets) < page_size:
+            break  # No more pages
+        page += 1
+    return datasets[:limit]
+
 # -----------------------------------------------------------------------------
 # 2. Core analysis tools
 # -----------------------------------------------------------------------------

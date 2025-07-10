@@ -34,3 +34,12 @@ export async function fetchDatasetSummary(datasetId: string = "684983b11152ff8e4
   return res.json();
 }
 
+export async function fetchAllDatasets(limit: number = 100): Promise<any[]> {
+  const url = new URL(`${BASE}/v1/datasets`);
+  url.searchParams.set("limit", String(limit));
+  const res = await fetch(url.toString(), { next: { revalidate: 60 } });
+  if (!res.ok) throw new Error("API error");
+  return res.json();
+}
+
+
