@@ -13,4 +13,4 @@ langchain-core>=0.3.30
 langchain-experimental==0.3.1
 langchain-community==0.3.1
 langchain-text-splitters==0.3.1
-langchain-text-splitters==0.3.1
+psycopg2-binary==2.9.9

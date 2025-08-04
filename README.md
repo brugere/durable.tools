@@ -45,7 +45,11 @@ Below is a checklist of the main development steps, with their current status:
 - [x] **Fetch data.gouv.fr API from backend**: Backend can fetch data from data.gouv.fr.
 - [x] **Setup UI in React**: Initial React/Next.js UI is in place.
 - [x] **Fetch list of available datasets on data.gouv.fr**: UI to display and interact with available datasets is in progress.
-- [ ] **Filter available datasets to only get the reparability datasets of washing machines.  
+- [ ] **Filter available datasets** to only get the reparability datasets of washing machines.  
+  - [ ] Create a directory for raw data (e.g., backend/data/raw/).
+  - [ ] Write a function to fetch the list of datasets.
+  - [ ] For each dataset, download the main CSV resource.
+  - [ ] Save each file locally.
 - [ ] **Get all data from data.gouv.fr**: Full data ingestion and processing pipeline to be completed.
 - [ ] **Modelize data fetched into DB service**: Design and implement database models for storing fetched data.
 - [ ] **Make backend use the database to serve the available data**: API endpoints to serve processed data from the database.

@@ -19,9 +19,12 @@ export default function SearchBox({ defaultValue = "" }: { defaultValue?: string
         type="text"
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Search brand or model…"
+        placeholder="Search washing machines by brand, model, or repairability…"
         className="w-full border p-2 rounded"
       />
+      <div className="mt-2 text-sm text-gray-600">
+        Try: "most repairable machine of 2025", "Samsung", "LG", etc.
+      </div>
     </form>
   );
 }

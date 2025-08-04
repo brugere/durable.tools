@@ -7,7 +7,7 @@ export default function Results() {
   console.log("API URL (process.env.NEXT_PUBLIC_API_URL):", process.env.NEXT_PUBLIC_API_URL);
   // Hardcoded datasetId for now
   const datasetId = "684983b11152ff8e46707a5f";
-  const [datasets, setDatasets] = useState<any[] | null>(null);
+  const [datasets, setDatasets] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,6 +32,9 @@ export default function Results() {
 
   // If datasets are loaded, show them
   if (datasets) {
+    // Handle the case where datasets is an object with a 'datasets' key
+    const datasetsArray = Array.isArray(datasets) ? datasets : datasets.datasets || [];
+    
     return (
       <div>
         <button
@@ -41,16 +44,20 @@ export default function Results() {
           Hide datasets
         </button>
         <h2 className="text-xl font-bold mb-2">Datasets from data.gouv.fr</h2>
-        <ul className="list-disc pl-6">
-          {datasets.map((ds) => (
-            <li key={ds.id} className="mb-1">
-              <span className="font-semibold">{ds.title || ds.id}</span>
-              {ds.organization && ds.organization.name ? (
-                <span className="ml-2 text-gray-500">({ds.organization.name})</span>
-              ) : null}
-            </li>
-          ))}
-        </ul>
+        {datasetsArray.length === 0 ? (
+          <p className="text-gray-600">No datasets found.</p>
+        ) : (
+          <ul className="list-disc pl-6">
+            {datasetsArray.map((ds: any) => (
+              <li key={ds.id} className="mb-1">
+                <span className="font-semibold">{ds.title || ds.id}</span>
+                {ds.organization && ds.organization.name ? (
+                  <span className="ml-2 text-gray-500">({ds.organization.name})</span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     );
   }
