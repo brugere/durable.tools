@@ -220,7 +220,7 @@ def get_washing_machine_datasets_summary() -> dict:
     return summary
 
 
-def download_all_washing_machine_data_raw(output_dir: str = "backend/data/raw") -> dict:
+def download_all_washing_machine_data_raw(output_dir: str = "data/raw") -> dict:
     """
     Download all washing machine durability datasets as raw CSV files.
     
@@ -468,7 +468,7 @@ if __name__ == "__main__":
         # Download all washing machine datasets as raw files
         print("Starting download of all washing machine datasets...")
         result = download_all_washing_machine_data_raw()
-        print(f"\nDownload completed! Check the 'backend/data/raw/' directory for the files.")
+        print(f"\nDownload completed! Check the 'data/raw/' directory for the files.")
     else:
         # Original agent-based functionality
         agent_executor = build_agent()

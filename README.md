@@ -45,14 +45,18 @@ Below is a checklist of the main development steps, with their current status:
 - [x] **Fetch data.gouv.fr API from backend**: Backend can fetch data from data.gouv.fr.
 - [x] **Setup UI in React**: Initial React/Next.js UI is in place.
 - [x] **Fetch list of available datasets on data.gouv.fr**: UI to display and interact with available datasets is in progress.
-- [ ] **Filter available datasets** to only get the reparability datasets of washing machines.  
-  - [ ] Create a directory for raw data (e.g., backend/data/raw/).
-  - [ ] Write a function to fetch the list of datasets.
-  - [ ] For each dataset, download the main CSV resource.
-  - [ ] Save each file locally.
-- [ ] **Get all data from data.gouv.fr**: Full data ingestion and processing pipeline to be completed.
-- [ ] **Modelize data fetched into DB service**: Design and implement database models for storing fetched data.
+- [x] **Filter available datasets** to only get the reparability datasets of washing machines.  
+  - [x] Create a directory for raw data (e.g., backend/data/raw/).
+  - [x] Write a function to fetch the list of datasets.
+  - [x] For each dataset, download the main CSV resource.
+  - [x] Save each file locally.
+- [x] **Get all data from data.gouv.fr**: Full data ingestion and processing pipeline to be completed.
+- [x] **Modelize data fetched into DB service**: Design and implement database models for storing fetched data.
+  - [x] **create V0 data model in pg**: stick to data.gouv.fr model as much as possible
+  - [x] **load local data into PG**: create a setup script to load data into PG
 - [ ] **Make backend use the database to serve the available data**: API endpoints to serve processed data from the database.
+  - [ ] **plug database in backend**: move backend api from direct remote api to local database 
+  - [ ] **make data searchable**: enhance search engine so UI becomes more versatile
 - [ ] **Update frontend to present an appealing view and search over the data available on backend API**: Enhance UI/UX for searching and displaying repairability data.
 
 ## Getting Started

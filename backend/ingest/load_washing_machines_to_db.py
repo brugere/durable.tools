@@ -2,7 +2,7 @@
 """
 Load washing machine data from raw CSV files into PostgreSQL database.
 
-This script reads all CSV files from backend/data/raw/ and loads them into
+This script reads all CSV files from data/raw/ and loads them into
 the washing_machines table in PostgreSQL.
 """
 
@@ -40,7 +40,7 @@ def get_db_connection():
         logger.error(f"Failed to connect to database: {e}")
         raise
 
-def get_csv_files(data_dir: str = "backend/data/raw") -> List[str]:
+def get_csv_files(data_dir: str = "data/raw") -> List[str]:
     """Get all CSV files from the data directory."""
     csv_files = []
     if os.path.exists(data_dir):
@@ -193,7 +193,7 @@ def main():
     # Get CSV files
     csv_files = get_csv_files()
     if not csv_files:
-        logger.error("No CSV files found in backend/data/raw/")
+        logger.error("No CSV files found in data/raw/")
         return
     
     logger.info(f"Found {len(csv_files)} CSV files to process")

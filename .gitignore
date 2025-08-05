@@ -13,6 +13,7 @@ __pycache__/
 *.pyd
 *.pyo
 .env/               # pyenv/virtualenv
+backend/data/
 
 # === OS / Editor ===
 .DS_Store
