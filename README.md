@@ -70,6 +70,49 @@ Below is a checklist of the main development steps, with their current status:
    - Frontend: [http://localhost:3000](http://localhost:3000)
    - Backend API: [http://localhost:8000](http://localhost:8000)
 
+## Deployment
+
+We provide a small CLI and Git hook to deploy to a VPS.
+
+1) Configure deploy settings
+
+```
+cp scripts/deploy.env.example scripts/deploy.env
+vi scripts/deploy.env
+```
+
+Key values:
+- `DEPLOY_HOST` (required): your VPS IP or hostname
+- `DEPLOY_USER` (default: `debian`)
+- `DEPLOY_PATH` (default: `/opt/durable.tools`)
+- `DEPLOY_DOMAIN` (optional): used for HTTPS checks
+- `DEPLOY_BRANCH` (default: `main`): auto-deploy only on this branch
+
+2) Hooks path (already set in this repo; run if needed)
+
+```
+git config core.hooksPath .githooks
+```
+
+3) Manual deploy
+
+```
+./scripts/deploy.sh --host $DEPLOY_HOST --user $DEPLOY_USER --domain $DEPLOY_DOMAIN
+```
+
+4) Auto-deploy on commit to `main`
+
+The post-commit hook deploys automatically on `main`. To skip for a commit:
+
+```
+git commit -m "feat: something [skip deploy]"
+```
+
+Options:
+- `--no-cache` – rebuild images from scratch
+- `--pull` – pull base images before build
+- `--services "frontend backend"` – build specific services
+
 ## Contributing
 
 Contributions are welcome! Please open issues or pull requests for suggestions, bug reports, or improvements.

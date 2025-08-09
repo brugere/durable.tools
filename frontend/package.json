@@ -5,7 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "deploy": "bash ../scripts/deploy.sh --host 51.210.241.37 --user debian --domain eco-lavelinge.fr",
+    "analyze": "ANALYZE=true npm run build",
+    "optimize": "node scripts/optimize.js",
+    "lighthouse": "lighthouse http://localhost:3000 --output=html --output-path=./lighthouse-report.html",
+    "performance": "npm run optimize && npm run build"
   },
   "dependencies": {
     "@tanstack/react-query": "5.32.0",
@@ -16,8 +21,10 @@
     "tailwindcss": "3.4.4"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^14.2.6",
     "@types/node": "24.0.3",
     "@types/react": "19.1.8",
+    "lighthouse": "^11.6.0",
     "typescript": "5.8.3"
   }
 }
