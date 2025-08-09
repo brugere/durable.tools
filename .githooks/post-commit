@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+# Load deploy configuration if present
+DEPLOY_ENV_FILE="$repo_root/scripts/deploy.env"
+if [[ -f "$DEPLOY_ENV_FILE" ]]; then
+  # shellcheck disable=SC1090
+  source "$DEPLOY_ENV_FILE"
+else
+  # No config → skip deploy silently
+  exit 0
+fi
+
+# Skip if not on main branch unless overridden
+current_branch="$(git rev-parse --abbrev-ref HEAD || echo)"
+if [[ "${DEPLOY_BRANCH:-main}" != "$current_branch" ]]; then
+  exit 0
+fi
+
+# Allow skipping via commit message marker
+last_msg="$(git log -1 --pretty=%B)"
+if echo "$last_msg" | grep -qi "\[skip deploy\]"; then
+  exit 0
+fi
+
+# Required vars
+if [[ -z "${DEPLOY_HOST:-}" ]]; then echo "post-commit: DEPLOY_HOST not set"; exit 0; fi
+DEPLOY_USER="${DEPLOY_USER:-debian}"
+DEPLOY_PATH="${DEPLOY_PATH:-/opt/durable.tools}"
+
+args=( --host "$DEPLOY_HOST" --user "$DEPLOY_USER" --path "$DEPLOY_PATH" )
+if [[ -n "${DEPLOY_DOMAIN:-}" ]]; then args+=( --domain "$DEPLOY_DOMAIN" ); fi
+if [[ -n "${DEPLOY_SERVICES:-}" ]]; then args+=( --services "$DEPLOY_SERVICES" ); fi
+if [[ "${DEPLOY_NO_CACHE:-}" == "true" ]]; then args+=( --no-cache ); fi
+if [[ "${DEPLOY_PULL:-}" == "true" ]]; then args+=( --pull ); fi
+
+"$repo_root/scripts/deploy.sh" "${args[@]}"
+
+
