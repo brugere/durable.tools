@@ -19,51 +19,59 @@ export default function SearchBox({ defaultValue = "" }: { defaultValue?: string
         className="relative"
       >
         <div className="relative">
-          <input
-            type="text"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Rechercher un lave-linge par marque, modèle ou critère..."
-            className="w-full px-6 py-4 text-lg border-2 border-blue-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-200 transition-all duration-200 placeholder-gray-400 bg-white shadow-sm"
-          />
-          <button
-            type="submit"
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 shadow-md"
-          >
-            Rechercher
-          </button>
+          <div className="flex w-full flex-1 items-stretch rounded-lg h-12">
+            <div
+              className="text-[#637588] flex border-none bg-[#f0f2f4] items-center justify-center pl-4 rounded-l-lg border-r-0"
+              data-icon="MagnifyingGlass"
+              data-size="24px"
+              data-weight="regular"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                <path
+                  d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"
+                ></path>
+              </svg>
+            </div>
+            <input
+              type="text"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Rechercher par modèle, capacité ou fonctionnalités"
+              className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#111418] focus:outline-0 focus:ring-0 border-none bg-[#f0f2f4] focus:border-none h-full placeholder:text-[#637588] px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
+            />
+          </div>
         </div>
       </form>
       
       {/* Enhanced Quick Search Suggestions */}
       <div className="mt-6">
         <div className="text-center mb-4">
-          <p className="text-sm text-gray-600 mb-2">Filtres populaires :</p>
+          <p className="text-sm text-[#637588] mb-2">Filtres populaires :</p>
         </div>
         
         {/* Primary Filters */}
         <div className="flex flex-wrap gap-3 justify-center mb-4">
           <button
             onClick={() => router.push('/?q=plus réparable')}
-            className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-blue-200"
+            className="bg-[#f0f2f4] hover:bg-[#e4e7eb] text-[#111418] px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-[#f0f2f4]"
           >
             🔧 Plus réparable
           </button>
           <button
             onClick={() => router.push('/?q=plus fiable')}
-            className="bg-green-100 hover:bg-green-200 text-green-800 px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-green-200"
+            className="bg-[#f0f2f4] hover:bg-[#e4e7eb] text-[#111418] px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-[#f0f2f4]"
           >
             ⭐ Plus fiable
           </button>
           <button
             onClick={() => router.push('/?q=excellent')}
-            className="bg-purple-100 hover:bg-purple-200 text-purple-800 px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-purple-200"
+            className="bg-[#f0f2f4] hover:bg-[#e4e7eb] text-[#111418] px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-[#f0f2f4]"
           >
             🏆 Excellent
           </button>
           <button
             onClick={() => router.push('/?q=durable')}
-            className="bg-indigo-100 hover:bg-indigo-200 text-indigo-800 px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-indigo-200"
+            className="bg-[#f0f2f4] hover:bg-[#e4e7eb] text-[#111418] px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-[#f0f2f4]"
           >
             🌱 Durable
           </button>
@@ -73,25 +81,25 @@ export default function SearchBox({ defaultValue = "" }: { defaultValue?: string
         <div className="flex flex-wrap gap-3 justify-center mb-4">
           <button
             onClick={() => router.push('/?q=Samsung')}
-            className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-gray-200"
+            className="bg-[#f0f2f4] hover:bg-[#e4e7eb] text-[#111418] px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-[#f0f2f4]"
           >
             📱 Samsung
           </button>
           <button
             onClick={() => router.push('/?q=LG')}
-            className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-gray-200"
+            className="bg-[#f0f2f4] hover:bg-[#e4e7eb] text-[#111418] px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-[#f0f2f4]"
           >
             📺 LG
           </button>
           <button
             onClick={() => router.push('/?q=Bosch')}
-            className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-gray-200"
+            className="bg-[#f0f2f4] hover:bg-[#e4e7eb] text-[#111418] px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-[#f0f2f4]"
           >
             🏠 Bosch
           </button>
           <button
             onClick={() => router.push('/?q=Whirlpool')}
-            className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-gray-200"
+            className="bg-[#f0f2f4] hover:bg-[#e4e7eb] text-[#111418] px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-[#f0f2f4]"
           >
             ⚡ Whirlpool
           </button>
@@ -101,25 +109,25 @@ export default function SearchBox({ defaultValue = "" }: { defaultValue?: string
         <div className="flex flex-wrap gap-3 justify-center">
           <button
             onClick={() => router.push('/?q=2025')}
-            className="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-yellow-200"
+            className="bg-[#f0f2f4] hover:bg-[#e4e7eb] text-[#111418] px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-[#f0f2f4]"
           >
             📅 Modèles 2025
           </button>
           <button
             onClick={() => router.push('/?q=hublot')}
-            className="bg-orange-100 hover:bg-orange-200 text-orange-800 px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-orange-200"
+            className="bg-[#f0f2f4] hover:bg-[#e4e7eb] text-[#111418] px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-[#f0f2f4]"
           >
             🔄 Hublot
           </button>
           <button
             onClick={() => router.push('/?q=top')}
-            className="bg-teal-100 hover:bg-teal-200 text-teal-800 px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-teal-200"
+            className="bg-[#f0f2f4] hover:bg-[#e4e7eb] text-[#111418] px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-[#f0f2f4]"
           >
             📦 Top
           </button>
           <button
             onClick={() => router.push('/?q=bon marché')}
-            className="bg-red-100 hover:bg-red-200 text-red-800 px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-red-200"
+            className="bg-[#f0f2f4] hover:bg-[#e4e7eb] text-[#111418] px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-[#f0f2f4]"
           >
             💰 Bon marché
           </button>

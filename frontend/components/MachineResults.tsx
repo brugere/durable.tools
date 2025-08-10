@@ -70,49 +70,49 @@ const MachineCard = ({ machine, index }: { machine: Machine; index: number }) =>
   const reference = machine.nom_modele && machine.nom_modele.trim() ? machine.nom_modele.split(" ").slice(-1)[0] : (machine.id_unique ?? "N/A");
   
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-lg shadow-sm border border-[#f0f2f4] overflow-hidden">
       {/* Top Section - Score Display */}
-      <div className="bg-gray-50 p-4 text-center border-b border-gray-200">
+      <div className="bg-[#f0f2f4] p-4 text-center border-b border-[#f0f2f4]">
         <div className="flex items-center justify-center mb-2">
-          <span className="text-green-600 text-2xl mr-2">⚙️🔧</span>
+          <span className="text-[#1773cf] text-2xl mr-2">⚙️🔧</span>
         </div>
         <div className={`text-3xl font-bold ${getScoreColor((machine.note_reparabilite ?? 0))}`}>
           {(machine.note_reparabilite ?? 0).toFixed(1)}/10
         </div>
-        <div className="text-sm text-gray-600 font-medium">
+        <div className="text-sm text-[#637588] font-medium">
           INDICE DE RÉPARABILITÉ
         </div>
       </div>
 
       {/* Middle Section - Product Image Placeholder */}
-      <div className="p-4 bg-gray-100 flex items-center justify-center h-32">
+      <div className="p-4 bg-[#f0f2f4] flex items-center justify-center h-32">
         <div className="text-center">
           <div className="text-4xl mb-2">🏠</div>
-          <div className="text-xs text-gray-500">Lave-linge</div>
+          <div className="text-xs text-[#637588]">Lave-linge</div>
         </div>
       </div>
 
       {/* Bottom Section - Product Details */}
       <div className="p-4">
-        <div className="text-xs font-medium mb-2 text-gray-700">
+        <div className="text-xs font-medium mb-2 text-[#637588]">
           INDICE DE RÉPARABILITÉ LAVE LINGE HUBLOT
         </div>
-        <div className="font-bold text-gray-900 mb-3 text-sm">
+        <div className="font-bold text-[#111418] mb-3 text-sm">
           {modelDisplay}
         </div>
         
         {/* Product Info Table */}
         <div className="space-y-1 text-xs">
           <div className="flex justify-between">
-            <span className="text-gray-600">Marque:</span>
+            <span className="text-[#637588]">Marque:</span>
             <span className="font-medium">{machine.nom_metteur_sur_le_marche}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Référence:</span>
+            <span className="text-[#637588]">Référence:</span>
             <span className="font-medium">{reference}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Date:</span>
+            <span className="text-[#637588]">Date:</span>
             <span className="font-medium">
               {machine.date_calcul ? new Date(machine.date_calcul).toLocaleDateString('fr-FR') : 'N/A'}
             </span>
@@ -120,19 +120,19 @@ const MachineCard = ({ machine, index }: { machine: Machine; index: number }) =>
         </div>
 
         {/* Additional Scores */}
-        <div className="mt-3 pt-3 border-t border-gray-200">
+        <div className="mt-3 pt-3 border-t border-[#f0f2f4]">
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="text-center">
               <div className={`font-bold ${getScoreColor((machine.note_fiabilite ?? 0))}`}>
                 {(machine.note_fiabilite ?? 0).toFixed(1) || 'N/A'}
               </div>
-              <div className="text-gray-500">Fiabilité</div>
+              <div className="text-[#637588]">Fiabilité</div>
             </div>
             <div className="text-center">
               <div className={`font-bold ${getScoreColor((machine.note_id ?? 0))}`}>
                 {(machine.note_id ?? 0).toFixed(1) || 'N/A'}
               </div>
-              <div className="text-gray-500">Note globale</div>
+              <div className="text-[#637588]">Note globale</div>
             </div>
           </div>
         </div>
@@ -144,7 +144,7 @@ const MachineCard = ({ machine, index }: { machine: Machine; index: number }) =>
             href={retailer.url}
             target="_blank"
             rel="noopener noreferrer sponsored"
-            className="w-full bg-green-600 hover:bg-green-700 text-white text-xs font-medium py-2 px-3 rounded block text-center transition-colors duration-200 flex items-center justify-center"
+            className="w-full bg-[#1773cf] hover:bg-[#1565c0] text-white text-xs font-medium py-2 px-3 rounded block text-center transition-colors duration-200 flex items-center justify-center"
           >
             <span className="mr-1">{retailer.icon}</span>
             Acheter sur {retailer.name}
@@ -156,7 +156,7 @@ const MachineCard = ({ machine, index }: { machine: Machine; index: number }) =>
               href={machine.url_tableau_detail_notation}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium py-2 px-3 rounded block text-center transition-colors duration-200"
+              className="w-full bg-[#1773cf] hover:bg-[#1565c0] text-white text-xs font-medium py-2 px-3 rounded block text-center transition-colors duration-200"
             >
               Voir le rapport
             </a>
@@ -166,7 +166,7 @@ const MachineCard = ({ machine, index }: { machine: Machine; index: number }) =>
           {machine.id && (
             <a
               href={`/machine/${machine.id}`}
-              className="w-full bg-gray-600 hover:bg-gray-700 text-white text-xs font-medium py-2 px-3 rounded block text-center transition-colors duration-200"
+              className="w-full bg-[#f0f2f4] hover:bg-[#e4e7eb] text-[#111418] text-xs font-medium py-2 px-3 rounded block text-center transition-colors duration-200"
             >
               📋 Voir les détails
             </a>
@@ -273,10 +273,10 @@ export default function MachineResults({ query }: MachineResultsProps) {
 
   if (loading) {
     return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Recherche en cours...</p>
-      </div>
+              <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1773cf] mx-auto"></div>
+          <p className="mt-4 text-[#637588]">Recherche en cours...</p>
+        </div>
     );
   }
 
@@ -292,14 +292,14 @@ export default function MachineResults({ query }: MachineResultsProps) {
   if (!results || results.machines.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-gray-400 text-6xl mb-4">🔍</div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        <div className="text-[#637588] text-6xl mb-4">🔍</div>
+        <h3 className="text-xl font-semibold text-[#111418] mb-2">
           Aucun lave-linge trouvé
         </h3>
-        <p className="text-gray-600 mb-4">
+        <p className="text-[#637588] mb-4">
           Aucun résultat pour "{query}"
         </p>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-[#637588]">
           Essayez avec d'autres termes de recherche
         </p>
       </div>
@@ -312,13 +312,13 @@ export default function MachineResults({ query }: MachineResultsProps) {
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-[#111418]">
               Résultats de recherche
             </h2>
-            <p className="text-gray-600">
+            <p className="text-[#637588]">
               {results.total} lave-linge{results.total !== 1 ? 's' : ''} trouvé{results.total !== 1 ? 's' : ''}
               {results.total > results.machines.length && (
-                <span className="text-sm text-gray-500 ml-2">
+                <span className="text-sm text-[#637588] ml-2">
                   (affichage de {results.machines.length} sur {results.total})
                 </span>
               )}
@@ -326,13 +326,13 @@ export default function MachineResults({ query }: MachineResultsProps) {
             {/* Show active filter */}
             {query && (
               <div className="mt-2">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#1773cf] text-white">
                   🔍 Filtre actif: "{query}"
                 </span>
               </div>
             )}
           </div>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-[#637588]">
             {query?.toLowerCase().includes('réparable') && 'Trié par réparabilité'}
             {query?.toLowerCase().includes('fiable') && 'Trié par fiabilité'}
             {query?.toLowerCase().includes('excellent') && 'Trié par score global'}
@@ -354,7 +354,7 @@ export default function MachineResults({ query }: MachineResultsProps) {
       {/* Load More */}
       {results.has_more && (
         <div className="text-center py-6">
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-[#637588] mb-4">
             Plus de résultats disponibles. Affinez votre recherche pour voir plus de modèles.
           </p>
         </div>

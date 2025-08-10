@@ -1,10 +1,24 @@
-// Always use same-origin in the browser (proxied by Nginx)
-// For SSR (if ever used), call the backend service directly inside the network
+// Determine API base URL based on environment
 const IS_BROWSER = typeof window !== 'undefined';
-const BASE = IS_BROWSER ? '' : 'http://backend:8000';
+
+// For local development, use the backend port directly
+// For production, use relative paths (proxied by Nginx)
+function getBaseUrl(): string {
+  if (!IS_BROWSER) {
+    return 'http://backend:8000'; // Server-side rendering (inside Docker network)
+  }
+  
+  // Check if we're in local development (localhost:3000)
+  if (window.location.hostname === 'localhost' && window.location.port === '3000') {
+    return 'http://localhost:8000'; // Local development - direct backend access
+  }
+  
+  return ''; // Production - relative paths (proxied by Nginx)
+}
 
 function makeUrl(path: string): string {
-  return `${BASE}${path}`;
+  const base = getBaseUrl();
+  return base ? `${base}${path}` : path;
 }
 
 // Cache for API responses

@@ -2,13 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?display=swap&family=Noto+Sans:wght@400;500;700;900&family=Public+Sans:wght@400;500;700;900');
+
 @layer base {
   html {
     scroll-behavior: smooth;
   }
   
   body {
-    @apply text-gray-900;
+    @apply text-[#111418];
+    font-family: "Public Sans", "Noto Sans", sans-serif;
   }
 }
 
@@ -22,7 +25,7 @@
   }
   
   .product-card {
-    @apply bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200;
+    @apply bg-white rounded-lg shadow-sm border border-[#f0f2f4] hover:shadow-md transition-all duration-200;
   }
   
   .rating-badge {
@@ -46,10 +49,10 @@
   }
   
   .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply bg-[#1773cf] hover:bg-[#1565c0] text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
   }
   
   .btn-secondary {
-    @apply bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply bg-[#f0f2f4] hover:bg-[#e4e7eb] text-[#111418] font-medium py-2 px-4 rounded-lg transition-colors duration-200;
   }
 } 

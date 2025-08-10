@@ -134,7 +134,7 @@ def infer_duckdb_type(col: str, series: pd.Series) -> str:
     return "VARCHAR"
 
 
-def create_table_with_schema(conn: duckdb.DuckDBPyConnection, df: pd.DataFrame):
+def create_table_with_schema(conn, df: pd.DataFrame):
     cols_sql = ["id BIGINT"]
     for col in df.columns:
         dtype = infer_duckdb_type(col, df[col])
@@ -143,7 +143,7 @@ def create_table_with_schema(conn: duckdb.DuckDBPyConnection, df: pd.DataFrame):
     conn.execute(ddl)
 
 
-def ensure_id_column(conn: duckdb.DuckDBPyConnection):
+def ensure_id_column(conn):
     has_id = conn.execute(
         "SELECT COUNT(*) FROM pragma_table_info('washing_machines') WHERE name='id'"
     ).fetchone()[0]
@@ -154,7 +154,7 @@ def ensure_id_column(conn: duckdb.DuckDBPyConnection):
         )
 
 
-def relax_integer_columns(conn: duckdb.DuckDBPyConnection):
+def relax_integer_columns(conn):
     info = conn.execute("PRAGMA table_info('washing_machines')").fetchdf()
     integer_types = {"TINYINT", "SMALLINT", "INTEGER", "BIGINT"}
     for name, typ in zip(info['name'], info['type']):
@@ -164,7 +164,7 @@ def relax_integer_columns(conn: duckdb.DuckDBPyConnection):
             conn.execute(f"ALTER TABLE washing_machines ALTER COLUMN {name} TYPE DOUBLE")
 
 
-def coerce_df_to_table_schema(conn: duckdb.DuckDBPyConnection, df: pd.DataFrame, current_id: int = 1) -> pd.DataFrame:
+def coerce_df_to_table_schema(conn, df: pd.DataFrame, current_id: int = 1) -> pd.DataFrame:
     info = conn.execute("PRAGMA table_info('washing_machines')").fetchdf()
     existing_cols = set(info['name'])
 
@@ -203,7 +203,7 @@ def coerce_df_to_table_schema(conn: duckdb.DuckDBPyConnection, df: pd.DataFrame,
 
 # ---------------- Write logic ---------------- #
 
-def try_insert(conn: duckdb.DuckDBPyConnection, df: pd.DataFrame, current_id: int = 1) -> bool:
+def try_insert(conn, df: pd.DataFrame, current_id: int = 1) -> bool:
     df2, cols = coerce_df_to_table_schema(conn, df, current_id)
     conn.register("df", df2)
     placeholders = ", ".join(cols)
@@ -214,7 +214,7 @@ def try_insert(conn: duckdb.DuckDBPyConnection, df: pd.DataFrame, current_id: in
         conn.unregister("df")
 
 
-def append_dataframe(conn: duckdb.DuckDBPyConnection, df: pd.DataFrame, current_id: int = 1):
+def append_dataframe(conn, df: pd.DataFrame, current_id: int = 1):
     exists = conn.execute(
         "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='washing_machines'"
     ).fetchone()[0]
