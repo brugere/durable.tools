@@ -1,0 +1,27 @@
+# Local development environment
+# Run with: docker compose -f docker-compose.local.yml up
+services:
+  backend:
+    build: ./backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      DUCKDB_PATH: /code/duckdb/washing_machines.duckdb
+    volumes: 
+      - ["duckdb-data:/code/duckdb"]
+      - ["./backend:/code"]  # Mount source code for hot reload
+    ports: ["8000:8000"]
+    expose: ["8000"]
+    
+  frontend:
+    build: ./frontend
+    command: npm run dev
+    depends_on: [backend]
+    ports: ["3000:3000"]
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:8000"
+    volumes:
+      - ["./frontend:/app"]  # Mount source code for hot reload
+      - ["/app/node_modules"]  # Preserve node_modules in container
+      
+volumes:
+  duckdb-data:

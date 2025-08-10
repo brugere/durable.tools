@@ -1,5 +1,70 @@
-const BASE =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://backend:8000";
+// Always use same-origin in the browser (proxied by Nginx)
+// For SSR (if ever used), call the backend service directly inside the network
+const IS_BROWSER = typeof window !== 'undefined';
+const BASE = IS_BROWSER ? '' : 'http://backend:8000';
+
+function makeUrl(path: string): string {
+  return `${BASE}${path}`;
+}
+
+// Cache for API responses
+const cache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Request deduplication
+const pendingRequests = new Map<string, Promise<any>>();
+
+function getCacheKey(endpoint: string, params: Record<string, any>): string {
+  const sortedParams = Object.keys(params)
+    .sort()
+    .map(key => `${key}=${params[key]}`)
+    .join('&');
+  return `${endpoint}?${sortedParams}`;
+}
+
+async function cachedFetch(url: string | URL, options: RequestInit = {}) {
+  const urlString = typeof url === 'string' ? url : url.toString();
+  const cacheKey = urlString;
+  const cached = cache.get(cacheKey);
+  
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data;
+  }
+
+  // Check if there's already a pending request for this URL
+  if (pendingRequests.has(cacheKey)) {
+    return pendingRequests.get(cacheKey)!;
+  }
+
+  const headers: Record<string, string> = {
+    'Accept': 'application/json',
+    ...((options.headers as Record<string, string>) || {}),
+  };
+  // Avoid setting Content-Type for GET requests to prevent unnecessary preflights
+  if (options.method && options.method.toUpperCase() !== 'GET') {
+    headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+  }
+
+  const requestPromise = fetch(urlString, {
+    ...options,
+    headers,
+  }).then(async (res) => {
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    const data = await res.json();
+    
+    // Cache the successful response
+    cache.set(cacheKey, { data, timestamp: Date.now() });
+    pendingRequests.delete(cacheKey);
+    
+    return data;
+  }).catch((error) => {
+    pendingRequests.delete(cacheKey);
+    throw error;
+  });
+
+  pendingRequests.set(cacheKey, requestPromise);
+  return requestPromise;
+}
 
 export async function fetchMachines(params: {
   q?: string;
@@ -15,13 +80,11 @@ export async function fetchMachines(params: {
   sort_by?: string;
   sort_order?: string;
 }) {
-  const url = new URL(`${BASE}/v1/machines`);
-  Object.entries(params).forEach(
-    ([k, v]) => v != null && url.searchParams.set(k, String(v))
-  );
-  const res = await fetch(url.toString(), { next: { revalidate: 60 } });
-  if (!res.ok) throw new Error("API error");
-  return res.json();
+  const url = new URL(makeUrl('/v1/machines'), IS_BROWSER ? window.location.origin : 'http://backend:8000');
+  Object.entries(params).forEach(([k, v]) => {
+    if (v != null) url.searchParams.set(k, String(v));
+  });
+  return cachedFetch(url.toString());
 }
 
 // New: Fetch dataset summary from backend
@@ -35,41 +98,37 @@ type DatasetSummary = {
 };
 
 export async function fetchDatasetSummary(datasetId: string = "684983b11152ff8e46707a5f", limit: number = 25): Promise<DatasetSummary> {
-  const url = new URL(`${BASE}/v1/dataset/${datasetId}`);
+  const url = new URL(makeUrl(`/v1/dataset/${datasetId}`), IS_BROWSER ? window.location.origin : 'http://backend:8000');
   url.searchParams.set("limit", String(limit));
-  const res = await fetch(url.toString(), { next: { revalidate: 60 } });
-  if (!res.ok) throw new Error("API error");
-  return res.json();
+  return cachedFetch(url.toString());
 }
 
 export async function fetchAllDatasets(limit: number = 100): Promise<any[]> {
-  const url = new URL(`${BASE}/v1/datasets`);
+  const url = new URL(makeUrl('/v1/datasets'), IS_BROWSER ? window.location.origin : 'http://backend:8000');
   url.searchParams.set("limit", String(limit));
-  const res = await fetch(url.toString(), { next: { revalidate: 60 } });
-  if (!res.ok) throw new Error("API error");
-  return res.json();
+  return cachedFetch(url.toString());
 }
 
 export async function fetchMachineDetails(machineId: number): Promise<any> {
-  const url = new URL(`${BASE}/v1/machines/${machineId}`);
-  const res = await fetch(url.toString(), { next: { revalidate: 60 } });
-  if (!res.ok) throw new Error("API error");
-  return res.json();
+  const url = new URL(makeUrl(`/v1/machines/${machineId}`), IS_BROWSER ? window.location.origin : 'http://backend:8000');
+  return cachedFetch(url.toString());
 }
 
 export async function fetchBrands(): Promise<string[]> {
-  const url = new URL(`${BASE}/v1/brands`);
-  const res = await fetch(url.toString(), { next: { revalidate: 60 } });
-  if (!res.ok) throw new Error("API error");
-  const data = await res.json();
+  const url = new URL(makeUrl('/v1/brands'), IS_BROWSER ? window.location.origin : 'http://backend:8000');
+  const data = await cachedFetch(url.toString());
   return data.brands || [];
 }
 
 export async function fetchStatistics(): Promise<any> {
-  const url = new URL(`${BASE}/v1/statistics`);
-  const res = await fetch(url.toString(), { next: { revalidate: 60 } });
-  if (!res.ok) throw new Error("API error");
-  return res.json();
+  const url = new URL(makeUrl('/v1/statistics'), IS_BROWSER ? window.location.origin : 'http://backend:8000');
+  return cachedFetch(url.toString());
+}
+
+// Clear cache function for development
+export function clearCache() {
+  cache.clear();
+  pendingRequests.clear();
 }
 
 

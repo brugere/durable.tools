@@ -2,12 +2,39 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap',
+  preload: true,
+  fallback: ['system-ui', 'arial'],
+})
 
 export const metadata: Metadata = {
   title: 'Meilleurs Lave-linge Durables 2025 | Comparatif et Avis',
   description: 'Découvrez les meilleurs lave-linge durables et réparables en 2025. Comparatif complet avec notes de réparabilité et fiabilité. Achetez en toute confiance.',
   keywords: 'lave-linge, durabilité, réparabilité, comparatif, 2025, électroménager',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  openGraph: {
+    title: 'Meilleurs Lave-linge Durables 2025',
+    description: 'Comparatif complet des lave-linge durables et réparables',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Meilleurs Lave-linge Durables 2025',
+    description: 'Comparatif complet des lave-linge durables et réparables',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 }
 
 export default function RootLayout({

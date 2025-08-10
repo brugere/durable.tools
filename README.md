@@ -61,14 +61,73 @@ Below is a checklist of the main development steps, with their current status:
 
 ## Getting Started
 
-1. **Clone the repository**
-2. **Start the stack**:
-   ```sh
-   docker-compose up --build
-   ```
-3. **Access the app**:
-   - Frontend: [http://localhost:3000](http://localhost:3000)
-   - Backend API: [http://localhost:8000](http://localhost:8000)
+### Local Development Environment
+
+For local development with hot reload and direct service access:
+
+```bash
+# Using the development helper script (recommended)
+npm run dev:start      # Start local environment
+npm run dev:stop       # Stop local environment
+npm run dev:restart    # Restart local environment
+npm run dev:build      # Rebuild and start
+npm run dev:logs       # View logs
+npm run dev:status     # Show container status
+npm run dev:shell      # Open shell in container
+npm run dev:clean      # Clean up containers and volumes
+
+# Or using direct docker compose commands
+npm run local          # Start local environment
+npm run local:build    # Rebuild and start local environment
+npm run local:down     # Stop local environment
+```
+
+**Local Environment Features:**
+- Frontend runs on `http://localhost:3000` with hot reload
+- Backend runs on `http://localhost:8000` with auto-reload
+- Direct access to services (no Nginx proxy)
+- Source code mounted for live editing
+- Uses `docker-compose.local.yml`
+- Development helper script for easy management
+
+### Production Environment (VPS)
+
+For production deployment on your VPS:
+
+```bash
+# Deploy to VPS
+npm run deploy
+
+# Or manually with production compose
+docker compose -f docker-compose.prod.yml up -d
+```
+
+**Production Environment Features:**
+- Nginx reverse proxy with SSL/TLS
+- Services exposed only internally
+- Production-optimized builds
+- Uses `docker-compose.prod.yml`
+
+### Development Helper Script
+
+We provide a convenient development helper script (`scripts/dev.sh`) that simplifies local development:
+
+```bash
+# From the project root
+./scripts/dev.sh start      # Start local environment
+./scripts/dev.sh stop       # Stop local environment
+./scripts/dev.sh restart    # Restart local environment
+./scripts/dev.sh build      # Rebuild and start
+./scripts/dev.sh logs       # View logs
+./scripts/dev.sh status     # Show container status
+./scripts/dev.sh shell <service>  # Open shell in container
+./scripts/dev.sh clean      # Clean up containers and volumes
+./scripts/dev.sh help       # Show all available commands
+```
+
+### Legacy Single Compose (Deprecated)
+
+The original `docker-compose.yml` is kept for backward compatibility but consider using the environment-specific files above.
 
 ## Deployment
 

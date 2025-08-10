@@ -28,6 +28,13 @@ NO_CACHE=false
 DO_PULL=false
 DOMAIN=""
 
+# Load repo-local defaults if available (scripts/deploy.env)
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo "$(cd "$(dirname "$0")/.." && pwd)")"
+if [[ -f "$REPO_ROOT/scripts/deploy.env" ]]; then
+  # shellcheck disable=SC1090
+  source "$REPO_ROOT/scripts/deploy.env"
+fi
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -h|--host) HOST="${2:-}"; shift 2 ;;
@@ -41,8 +48,17 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$HOST" ]]; then
-  echo "Error: --host is required"
+# If not provided via flags, fall back to env vars from deploy.env
+HOST="${HOST:-${DEPLOY_HOST:-}}"
+USER="${USER:-${DEPLOY_USER:-debian}}"
+DEST="${DEST:-${DEPLOY_PATH:-/opt/durable.tools}}"
+SERVICES="${SERVICES:-${DEPLOY_SERVICES:-}}"
+DOMAIN="${DOMAIN:-${DEPLOY_DOMAIN:-}}"
+if [[ "${DEPLOY_NO_CACHE:-}" == "true" ]]; then NO_CACHE=true; fi
+if [[ "${DEPLOY_PULL:-}" == "true" ]]; then DO_PULL=true; fi
+
+if [[ -z "${HOST:-}" ]]; then
+  echo "Error: --host is required (or set DEPLOY_HOST in scripts/deploy.env)"
   print_usage
   exit 2
 fi

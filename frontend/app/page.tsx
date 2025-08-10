@@ -1,9 +1,19 @@
 // frontend/app/page.tsx
-export const dynamic = "force-dynamic";
 
+import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import SearchBox from "@/components/SearchBox";
-import MachineResults from "@/components/MachineResults";
+
+// Lazy-load the client MachineResults to reduce initial JS and TBT
+const MachineResults = dynamic(() => import("@/components/MachineResults"), {
+  loading: () => (
+    <div className="text-center py-12">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+      <p className="mt-4 text-gray-600">Recherche en cours...</p>
+    </div>
+  ),
+  ssr: false,
+});
 
 export default function Home({
   searchParams,
@@ -133,16 +143,13 @@ export default function Home({
       </section>
 
       {/* Results Section */}
-      <section className="mb-12">
-        <Suspense fallback={
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Recherche en cours...</p>
-          </div>
-        }>
-          <MachineResults query={searchParams.q} />
-        </Suspense>
-      </section>
+      {searchParams.q && (
+        <section className="mb-12">
+          <Suspense fallback={null}>
+            <MachineResults query={searchParams.q} />
+          </Suspense>
+        </section>
+      )}
 
       {/* CTA Section with Gradient */}
       {!searchParams.q && (

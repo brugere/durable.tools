@@ -1,32 +1,72 @@
 """
-Search functionality for washing machines database.
+Search functionality for washing machines database using DuckDB.
 """
 
-import os
-import psycopg2
-from psycopg2.extras import RealDictCursor
 from typing import List, Dict, Any, Optional
 import logging
+import re
+import duckdb
+
+from .duckdb_utils import get_connection
 
 logger = logging.getLogger(__name__)
 
-# Database configuration
-DB_CONFIG = {
-    'host': os.getenv('DB_HOST', 'db'),  # Changed from 'localhost' to 'db'
-    'port': os.getenv('DB_PORT', '5432'),
-    'database': os.getenv('DB_NAME', 'postgres'),
-    'user': os.getenv('DB_USER', 'postgres'),
-    'password': os.getenv('DB_PASSWORD', 'postgres')
-}
 
-def get_db_connection():
-    """Create and return a database connection."""
-    try:
-        conn = psycopg2.connect(**DB_CONFIG)
-        return conn
-    except Exception as e:
-        logger.error(f"Failed to connect to database: {e}")
-        raise
+def _sanitize_like(value: str) -> str:
+    # DuckDB uses ILIKE for case-insensitive matches, but Python parameterization will handle quoting
+    return f"%{value}%"
+
+
+def _build_where_and_params(
+    query: Optional[str],
+    brand: Optional[str],
+    model: Optional[str],
+    min_repairability: Optional[float],
+    max_repairability: Optional[float],
+    min_reliability: Optional[float],
+    max_reliability: Optional[float],
+    year: Optional[int],
+) -> tuple[str, list]:
+    conditions = []
+    params: list[Any] = []
+
+    if query:
+        conditions.append("(nom_modele ILIKE ? OR nom_metteur_sur_le_marche ILIKE ?)")
+        like = _sanitize_like(query)
+        params.extend([like, like])
+
+    if brand:
+        conditions.append("nom_metteur_sur_le_marche ILIKE ?")
+        params.append(_sanitize_like(brand))
+
+    if model:
+        conditions.append("nom_modele ILIKE ?")
+        params.append(_sanitize_like(model))
+
+    if min_repairability is not None:
+        conditions.append("note_reparabilite >= ?")
+        params.append(min_repairability)
+
+    if max_repairability is not None:
+        conditions.append("note_reparabilite <= ?")
+        params.append(max_repairability)
+
+    if min_reliability is not None:
+        conditions.append("note_fiabilite >= ?")
+        params.append(min_reliability)
+
+    if max_reliability is not None:
+        conditions.append("note_fiabilite <= ?")
+        params.append(max_reliability)
+
+    if year is not None:
+        # Cast date to year; DuckDB supports EXTRACT(YEAR FROM col)
+        conditions.append("EXTRACT(YEAR FROM date_calcul) = ?")
+        params.append(year)
+
+    where_clause = " AND ".join(conditions) if conditions else "1=1"
+    return where_clause, params
+
 
 def search_washing_machines(
     query: Optional[str] = None,
@@ -40,102 +80,85 @@ def search_washing_machines(
     limit: int = 50,
     offset: int = 0,
     sort_by: str = "note_reparabilite",
-    sort_order: str = "DESC"
+    sort_order: str = "DESC",
 ) -> Dict[str, Any]:
-    """
-    Search washing machines in the database with various filters.
-    
-    Args:
-        query: General search query (searches in model name and brand)
-        brand: Filter by brand/manufacturer
-        model: Filter by model name
-        min_repairability: Minimum repairability score
-        max_repairability: Maximum repairability score
-        min_reliability: Minimum reliability score
-        max_reliability: Maximum reliability score
-        year: Filter by year (extracted from date_calcul)
-        limit: Maximum number of results
-        offset: Number of results to skip
-        sort_by: Field to sort by
-        sort_order: Sort order (ASC or DESC)
-    
-    Returns:
-        Dict with results and metadata
+    """Search washing machines in DuckDB.
+
+    Returns a dict with keys: machines, total, limit, offset, has_more
     """
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
-        
-        # Build the WHERE clause
-        conditions = []
-        params = []
-        param_count = 0
-        
-        if query:
-            param_count += 1
-            conditions.append(f"(nom_modele ILIKE %s OR nom_metteur_sur_le_marche ILIKE %s)")
-            params.extend([f"%{query}%", f"%{query}%"])
-        
-        if brand:
-            param_count += 1
-            conditions.append(f"nom_metteur_sur_le_marche ILIKE %s")
-            params.append(f"%{brand}%")
-        
-        if model:
-            param_count += 1
-            conditions.append(f"nom_modele ILIKE %s")
-            params.append(f"%{model}%")
-        
-        if min_repairability is not None:
-            param_count += 1
-            conditions.append(f"note_reparabilite >= %s")
-            params.append(min_repairability)
-        
-        if max_repairability is not None:
-            param_count += 1
-            conditions.append(f"note_reparabilite <= %s")
-            params.append(max_repairability)
-        
-        if min_reliability is not None:
-            param_count += 1
-            conditions.append(f"note_fiabilite >= %s")
-            params.append(min_reliability)
-        
-        if max_reliability is not None:
-            param_count += 1
-            conditions.append(f"note_fiabilite <= %s")
-            params.append(max_reliability)
-        
-        if year:
-            param_count += 1
-            conditions.append(f"EXTRACT(YEAR FROM date_calcul) = %s")
-            params.append(year)
-        
-        # Build the SQL query
-        where_clause = " AND ".join(conditions) if conditions else "1=1"
-        
-        # Validate sort_by to prevent SQL injection
+        conn = get_connection(readonly=True)
+
         allowed_sort_fields = {
-            'nom_modele', 'nom_metteur_sur_le_marche', 'note_reparabilite', 
-            'note_fiabilite', 'date_calcul', 'note_id'
+            "nom_modele",
+            "nom_metteur_sur_le_marche",
+            "note_reparabilite",
+            "note_fiabilite",
+            "date_calcul",
+            "note_id",
         }
         if sort_by not in allowed_sort_fields:
-            sort_by = 'note_reparabilite'
-        
-        if sort_order.upper() not in ['ASC', 'DESC']:
-            sort_order = 'DESC'
-        
-        # Count total results
-        count_sql = f"""
-            SELECT COUNT(*) 
-            FROM washing_machines 
+            sort_by = "note_reparabilite"
+        sort_order = "DESC" if str(sort_order).upper() == "DESC" else "ASC"
+
+        where_clause, params = _build_where_and_params(
+            query, brand, model, min_repairability, max_repairability,
+            min_reliability, max_reliability, year
+        )
+
+        count_sql = f"SELECT COUNT(*) AS cnt FROM washing_machines WHERE {where_clause}"
+        total_count = conn.execute(count_sql, params).fetchone()[0]
+
+        select_sql = f"""
+            SELECT
+                id,
+                id_unique,
+                nom_modele,
+                nom_metteur_sur_le_marche,
+                date_calcul,
+                note_reparabilite,
+                note_fiabilite,
+                note_id,
+                categorie_produit,
+                url_tableau_detail_notation,
+                accessibilite_compteur_usage,
+                lien_documentation_professionnels,
+                lien_documentation_particuliers,
+                note_A_c1, note_A_c2, note_A_c3, note_A_c4,
+                note_B_c1, note_B_c2, note_B_c3,
+                nom_piece_1_liste_2, nom_piece_2_liste_2, nom_piece_3_liste_2,
+                nom_piece_4_liste_2, nom_piece_5_liste_2
+            FROM washing_machines
             WHERE {where_clause}
+            ORDER BY {sort_by} {sort_order}
+            LIMIT ? OFFSET ?
         """
-        cursor.execute(count_sql, params)
-        total_count = cursor.fetchone()['count']
-        
-        # Get results
-        sql = f"""
+        rows = conn.execute(select_sql, params + [limit, offset]).fetchall()
+        cols = [d[0] for d in conn.description]
+        machines = [dict(zip(cols, r)) for r in rows]
+
+        # Ensure ISO date strings
+        for m in machines:
+            if m.get("date_calcul") is not None:
+                # DuckDB returns datetime/date as Python date/datetime; isoformat is fine
+                m["date_calcul"] = m["date_calcul"].isoformat()
+
+        return {
+            "machines": machines,
+            "total": total_count,
+            "limit": limit,
+            "offset": offset,
+            "has_more": offset + limit < total_count,
+        }
+    except Exception as e:
+        logger.error(f"Error searching washing machines (duckdb): {e}")
+        raise
+
+
+def get_machine_details(machine_id: int) -> Optional[Dict[str, Any]]:
+    try:
+        conn = get_connection(readonly=True)
+        sql = """
             SELECT 
                 id,
                 id_unique,
@@ -149,121 +172,51 @@ def search_washing_machines(
                 url_tableau_detail_notation,
                 accessibilite_compteur_usage,
                 lien_documentation_professionnels,
-                lien_documentation_particuliers
-            FROM washing_machines 
-            WHERE {where_clause}
-            ORDER BY {sort_by} {sort_order}
-            LIMIT %s OFFSET %s
+                lien_documentation_particuliers,
+                note_A_c1, note_A_c2, note_A_c3, note_A_c4,
+                note_B_c1, note_B_c2, note_B_c3,
+                nom_piece_1_liste_2, nom_piece_2_liste_2, nom_piece_3_liste_2,
+                nom_piece_4_liste_2, nom_piece_5_liste_2,
+                etape_demontage_piece_1_liste_2, etape_demontage_piece_2_liste_2,
+                etape_demontage_piece_3_liste_2, etape_demontage_piece_4_liste_2,
+                etape_demontage_piece_5_liste_2
+            FROM washing_machines WHERE id = ?
         """
-        
-        cursor.execute(sql, params + [limit, offset])
-        results = cursor.fetchall()
-        
-        # Convert results to list of dicts
-        machines = []
-        for row in results:
-            machine = dict(row)
-            # Convert date to string for JSON serialization
-            if machine['date_calcul']:
-                machine['date_calcul'] = machine['date_calcul'].isoformat()
-            machines.append(machine)
-        
-        cursor.close()
-        conn.close()
-        
-        return {
-            "machines": machines,
-            "total": total_count,
-            "limit": limit,
-            "offset": offset,
-            "has_more": offset + limit < total_count
-        }
-        
+        res = conn.execute(sql, [machine_id]).fetchone()
+        if not res:
+            return None
+        cols = [d[0] for d in conn.description]
+        m = dict(zip(cols, res))
+        if m.get("date_calcul") is not None:
+            m["date_calcul"] = m["date_calcul"].isoformat()
+        return m
     except Exception as e:
-        logger.error(f"Error searching washing machines: {e}")
+        logger.error(f"Error getting machine details (duckdb): {e}")
         raise
 
-def get_machine_details(machine_id: int) -> Optional[Dict[str, Any]]:
-    """
-    Get detailed information about a specific washing machine.
-    
-    Args:
-        machine_id: The ID of the machine to retrieve
-    
-    Returns:
-        Dict with machine details or None if not found
-    """
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
-        
-        sql = """
-            SELECT * FROM washing_machines WHERE id = %s
-        """
-        
-        cursor.execute(sql, [machine_id])
-        result = cursor.fetchone()
-        
-        cursor.close()
-        conn.close()
-        
-        if result:
-            machine = dict(result)
-            # Convert date to string for JSON serialization
-            if machine['date_calcul']:
-                machine['date_calcul'] = machine['date_calcul'].isoformat()
-            return machine
-        
-        return None
-        
-    except Exception as e:
-        logger.error(f"Error getting machine details: {e}")
-        raise
 
 def get_brands() -> List[str]:
-    """
-    Get list of all unique brands/manufacturers.
-    
-    Returns:
-        List of brand names
-    """
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        sql = """
-            SELECT DISTINCT nom_metteur_sur_le_marche 
-            FROM washing_machines 
-            WHERE nom_metteur_sur_le_marche IS NOT NULL 
-            AND nom_metteur_sur_le_marche != ''
-            ORDER BY nom_metteur_sur_le_marche
-        """
-        
-        cursor.execute(sql)
-        results = cursor.fetchall()
-        
-        cursor.close()
-        conn.close()
-        
-        return [row[0] for row in results]
-        
+        conn = get_connection(readonly=True)
+        sql = (
+            "SELECT DISTINCT nom_metteur_sur_le_marche "
+            "FROM washing_machines "
+            "WHERE nom_metteur_sur_le_marche IS NOT NULL "
+            "AND nom_metteur_sur_le_marche != '' "
+            "ORDER BY nom_metteur_sur_le_marche"
+        )
+        rows = conn.execute(sql).fetchall()
+        return [r[0] for r in rows]
     except Exception as e:
-        logger.error(f"Error getting brands: {e}")
+        logger.error(f"Error getting brands (duckdb): {e}")
         raise
 
+
 def get_statistics() -> Dict[str, Any]:
-    """
-    Get statistics about the washing machines database.
-    
-    Returns:
-        Dict with various statistics
-    """
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
-        
-        # Get basic stats
-        cursor.execute("""
+        conn = get_connection(readonly=True)
+        stats_row = conn.execute(
+            """
             SELECT 
                 COUNT(*) as total_machines,
                 COUNT(DISTINCT nom_metteur_sur_le_marche) as total_brands,
@@ -275,12 +228,14 @@ def get_statistics() -> Dict[str, Any]:
                 MAX(note_fiabilite) as max_reliability
             FROM washing_machines
             WHERE note_reparabilite IS NOT NULL AND note_fiabilite IS NOT NULL
-        """)
-        
-        stats = dict(cursor.fetchone())
-        
-        # Get top brands by repairability
-        cursor.execute("""
+            """
+        ).fetchone()
+
+        cols = [d[0] for d in conn.description]
+        stats = dict(zip(cols, stats_row))
+
+        top_rows = conn.execute(
+            """
             SELECT 
                 nom_metteur_sur_le_marche,
                 AVG(note_reparabilite) as avg_repairability,
@@ -291,18 +246,15 @@ def get_statistics() -> Dict[str, Any]:
             HAVING COUNT(*) >= 2
             ORDER BY avg_repairability DESC
             LIMIT 10
-        """)
-        
-        top_brands = [dict(row) for row in cursor.fetchall()]
-        
-        cursor.close()
-        conn.close()
-        
+            """
+        ).fetchall()
+        top_cols = [d[0] for d in conn.description]
+        top_brands = [dict(zip(top_cols, r)) for r in top_rows]
+
         return {
             "statistics": stats,
-            "top_brands_by_repairability": top_brands
+            "top_brands_by_repairability": top_brands,
         }
-        
     except Exception as e:
-        logger.error(f"Error getting statistics: {e}")
+        logger.error(f"Error getting statistics (duckdb): {e}")
         raise 

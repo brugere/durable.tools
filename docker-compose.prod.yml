@@ -1,3 +1,5 @@
+# Production environment (VPS deployment)
+# Run with: docker compose -f docker-compose.prod.yml up
 services:
   backend:
     build: ./backend
@@ -6,6 +8,7 @@ services:
       DUCKDB_PATH: /code/duckdb/washing_machines.duckdb
     volumes: ["duckdb-data:/code/duckdb"]
     expose: ["8000"]
+    
   frontend:
     build: ./frontend
     command: npm run start
@@ -13,6 +16,7 @@ services:
     expose: ["3000"]
     environment:
       NEXT_PUBLIC_API_URL: ""
+      
   nginx:
     image: nginx:1.27-alpine
     depends_on: [frontend, backend]
@@ -22,6 +26,6 @@ services:
       - /var/www/certbot:/var/www/certbot
       - /etc/letsencrypt:/etc/letsencrypt:ro
     restart: unless-stopped
+    
 volumes:
   duckdb-data:
-

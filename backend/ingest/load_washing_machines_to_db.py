@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 """
-Load washing machine data from raw CSV files into PostgreSQL database.
+Load washing machine data from raw CSV files into DuckDB database.
 
-This script reads all CSV files from data/raw/ and loads them into
-the washing_machines table in PostgreSQL.
+This script reads CSV files from a data directory and loads them into
+ the washing_machines table in DuckDB.
 """
 
 import os
 import sys
 import pandas as pd
-import psycopg2
-from psycopg2.extras import RealDictCursor
-from typing import List, Dict, Any
+import duckdb
+from typing import List
 import logging
-from datetime import datetime
+from pathlib import Path
+
+from app.duckdb_utils import get_connection
 
 # Setup logging
 logging.basicConfig(
@@ -22,213 +23,247 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Database configuration
-DB_CONFIG = {
-    'host': os.getenv('DB_HOST', 'localhost'),
-    'port': os.getenv('DB_PORT', '5432'),
-    'database': os.getenv('DB_NAME', 'postgres'),
-    'user': os.getenv('DB_USER', 'postgres'),
-    'password': os.getenv('DB_PASSWORD', 'postgres')
-}
 
-def get_db_connection():
-    """Create and return a database connection."""
-    try:
-        conn = psycopg2.connect(**DB_CONFIG)
-        return conn
-    except Exception as e:
-        logger.error(f"Failed to connect to database: {e}")
-        raise
+# ---------------- Path resolution ---------------- #
 
-def get_csv_files(data_dir: str = "data/raw") -> List[str]:
-    """Get all CSV files from the data directory."""
-    csv_files = []
-    if os.path.exists(data_dir):
-        for file in os.listdir(data_dir):
-            if file.endswith('.csv'):
-                csv_files.append(os.path.join(data_dir, file))
-    return sorted(csv_files)
+def _candidate_dirs() -> list[Path]:
+    cwd = Path(os.getcwd())
+    script_dir = Path(__file__).resolve().parent
+    backend_dir = script_dir.parent
+
+    candidates: list[Path] = []
+
+    env_dir = os.environ.get("DATA_DIR")
+    if env_dir:
+        p = Path(env_dir)
+        candidates.append(p if p.is_absolute() else cwd / p)
+
+    candidates.append(cwd / "backend" / "data" / "raw")
+    candidates.append(cwd / "data" / "raw")
+    candidates.append(backend_dir / "data" / "raw")
+    candidates.append(cwd / "data")
+
+    out: list[Path] = []
+    seen = set()
+    for p in candidates:
+        rp = p.resolve()
+        if rp not in seen:
+            out.append(rp)
+            seen.add(rp)
+    return out
+
+
+def get_csv_files() -> List[str]:
+    files: list[str] = []
+    checked: list[str] = []
+    for d in _candidate_dirs():
+        checked.append(str(d))
+        if d.exists() and d.is_dir():
+            for file in sorted(d.glob("*.csv")):
+                files.append(str(file))
+    if not files:
+        logger.error("No CSV files found. Checked: %s", ", ".join(checked))
+    else:
+        logger.info(
+            "Found %d CSV files in: %s",
+            len(files),
+            ", ".join(sorted({str(Path(f).parent) for f in files})),
+        )
+    return files
+
+
+# ---------------- CSV helpers ---------------- #
 
 def detect_separator(file_path: str) -> str:
-    """Detect the separator used in the CSV file."""
-    with open(file_path, 'r', encoding='utf-8') as f:
+    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
         first_line = f.readline().strip()
         if ';' in first_line:
             return ';'
         elif ',' in first_line:
             return ','
         else:
-            return ','  # default
+            return ','
+
 
 def clean_column_name(col: str) -> str:
-    """Clean column names to match database schema."""
-    # Replace dots with underscores for PostgreSQL compatibility
     return col.replace('.', '_')
 
-def load_csv_to_dataframe(file_path: str) -> pd.DataFrame:
-    """Load a CSV file into a pandas DataFrame with proper encoding and separator detection."""
-    try:
-        separator = detect_separator(file_path)
-        logger.info(f"Loading {file_path} with separator '{separator}'")
-        
-        # Try different encodings
-        encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
-        
-        for encoding in encodings:
-            try:
-                df = pd.read_csv(file_path, sep=separator, encoding=encoding, low_memory=False)
-                logger.info(f"Successfully loaded with encoding {encoding}")
-                return df
-            except UnicodeDecodeError:
-                continue
-            except Exception as e:
-                logger.warning(f"Failed to load with encoding {encoding}: {e}")
-                continue
-        
-        raise Exception(f"Could not load {file_path} with any encoding")
-        
-    except Exception as e:
-        logger.error(f"Failed to load {file_path}: {e}")
-        raise
 
-def prepare_dataframe_for_db(df: pd.DataFrame) -> pd.DataFrame:
-    """Prepare DataFrame for database insertion."""
-    # Clean column names
+def load_csv_to_dataframe(file_path: str) -> pd.DataFrame:
+    separator = detect_separator(file_path)
+    logger.info(f"Loading {file_path} with separator '{separator}'")
+    encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
+    for encoding in encodings:
+        try:
+            df = pd.read_csv(file_path, sep=separator, encoding=encoding, low_memory=False)
+            logger.info(f"Successfully loaded with encoding {encoding}")
+            return df
+        except Exception as e:
+            logger.warning(f"Failed to load with encoding {encoding}: {e}")
+            continue
+    raise Exception(f"Could not load {file_path} with any encoding")
+
+
+# ---------------- Schema helpers ---------------- #
+
+NUMERIC_COLUMNS_PREFIXES = ("note_")
+NUMERIC_COLUMNS_EXACT = {"note_id", "note_reparabilite", "note_fiabilite"}
+INTEGER_HINTS = ("delai_jours", "nb_annees")
+DATE_COLUMNS = {"date_calcul"}
+
+
+def prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df.columns = [clean_column_name(col) for col in df.columns]
-    
-    # Convert date columns
-    if 'date_calcul' in df.columns:
-        df['date_calcul'] = pd.to_datetime(df['date_calcul'], errors='coerce')
-    
-    # Convert numeric columns
-    numeric_columns = ['note_id', 'note_reparabilite', 'note_fiabilite']
-    for col in numeric_columns:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
-    
-    # Convert integer columns (delai_jours and nb_annees columns)
+
     for col in df.columns:
-        if 'delai_jours' in col or 'nb_annees' in col:
-            df[col] = pd.to_numeric(df[col], errors='coerce').astype('Int64')
-    
-    # Convert float columns (note_* columns)
-    for col in df.columns:
-        if col.startswith('note_'):
+        if col in DATE_COLUMNS:
+            df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
+        elif col in NUMERIC_COLUMNS_EXACT or col.startswith(NUMERIC_COLUMNS_PREFIXES) or any(h in col for h in INTEGER_HINTS):
+            # Treat all numeric/integer-like as float to be permissive
             df[col] = pd.to_numeric(df[col], errors='coerce')
-    
-    # Convert boolean columns
-    if 'is_orga' in df.columns:
-        df['is_orga'] = df['is_orga'].map({'true': True, 'false': False, True: True, False: False})
-    
-    # Convert timestamp columns
-    timestamp_columns = ['last_modified', 'created_at']
-    for col in timestamp_columns:
-        if col in df.columns:
-            df[col] = pd.to_datetime(df[col], errors='coerce')
-    
+        # else leave as object/string
     return df
 
-def insert_dataframe_to_db(df: pd.DataFrame, conn) -> int:
-    """Insert DataFrame into the washing_machines table."""
-    cursor = conn.cursor()
-    
-    # Get column names that exist in the database
-    cursor.execute("""
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name = 'washing_machines' 
-        AND column_name != 'id'
-        AND column_name != 'created_at_db'
-        AND column_name != 'updated_at_db'
-        ORDER BY ordinal_position
-    """)
-    db_columns = [row[0] for row in cursor.fetchall()]
-    
-    # Filter DataFrame to only include columns that exist in the database
-    available_columns = [col for col in df.columns if col in db_columns]
-    df_filtered = df[available_columns]
-    
-    # Create the INSERT statement
-    columns_str = ', '.join(available_columns)
-    placeholders = ', '.join(['%s'] * len(available_columns))
-    
-    insert_sql = f"""
-        INSERT INTO washing_machines ({columns_str})
-        VALUES ({placeholders})
-    """
-    
-    # Convert DataFrame to list of tuples for insertion
-    records = df_filtered.to_dict('records')
-    values_list = []
-    
-    for record in records:
-        values = []
-        for col in available_columns:
-            value = record.get(col)
-            # Handle NaN values
-            if pd.isna(value):
-                values.append(None)
-            else:
-                values.append(value)
-        values_list.append(tuple(values))
-    
-    # Insert data
+
+def infer_duckdb_type(col: str, series: pd.Series) -> str:
+    if col in DATE_COLUMNS:
+        return "DATE"
+    # All numeric and integer-like become DOUBLE to avoid cast errors
+    if col in NUMERIC_COLUMNS_EXACT or col.startswith(NUMERIC_COLUMNS_PREFIXES) or any(h in col for h in INTEGER_HINTS):
+        return "DOUBLE"
+    return "VARCHAR"
+
+
+def create_table_with_schema(conn: duckdb.DuckDBPyConnection, df: pd.DataFrame):
+    cols_sql = ["id BIGINT"]
+    for col in df.columns:
+        dtype = infer_duckdb_type(col, df[col])
+        cols_sql.append(f"{col} {dtype}")
+    ddl = "CREATE TABLE washing_machines (" + ", ".join(cols_sql) + ")"
+    conn.execute(ddl)
+
+
+def ensure_id_column(conn: duckdb.DuckDBPyConnection):
+    has_id = conn.execute(
+        "SELECT COUNT(*) FROM pragma_table_info('washing_machines') WHERE name='id'"
+    ).fetchone()[0]
+    if not has_id:
+        conn.execute("ALTER TABLE washing_machines ADD COLUMN id BIGINT")
+        conn.execute(
+            "UPDATE washing_machines SET id = row_number() OVER ()"
+        )
+
+
+def relax_integer_columns(conn: duckdb.DuckDBPyConnection):
+    info = conn.execute("PRAGMA table_info('washing_machines')").fetchdf()
+    integer_types = {"TINYINT", "SMALLINT", "INTEGER", "BIGINT"}
+    for name, typ in zip(info['name'], info['type']):
+        if name == 'id':
+            continue
+        if typ in integer_types:
+            conn.execute(f"ALTER TABLE washing_machines ALTER COLUMN {name} TYPE DOUBLE")
+
+
+def coerce_df_to_table_schema(conn: duckdb.DuckDBPyConnection, df: pd.DataFrame, current_id: int = 1) -> pd.DataFrame:
+    info = conn.execute("PRAGMA table_info('washing_machines')").fetchdf()
+    existing_cols = set(info['name'])
+
+    # Add missing columns with permissive types
+    for col in df.columns:
+        if col not in existing_cols:
+            duck_type = infer_duckdb_type(col, df[col])
+            conn.execute(f"ALTER TABLE washing_machines ADD COLUMN {col} {duck_type}")
+            existing_cols.add(col)
+
+    # Refresh schema
+    info = conn.execute("PRAGMA table_info('washing_machines')").fetchdf()
+    type_map = dict(zip(info['name'], info['type']))
+
+    # Build aligned DataFrame
+    out_cols = {}
+    for col, dtype in type_map.items():
+        if col == 'id':
+            # Generate sequential IDs starting from current_id
+            out_cols[col] = pd.Series(range(current_id, current_id + len(df)))
+        elif col not in df.columns:
+            out_cols[col] = pd.Series([None] * len(df))
+        else:
+            s = df[col]
+            if dtype in ("DOUBLE", "REAL", "DECIMAL"):
+                s = pd.to_numeric(s, errors='coerce')
+            elif dtype == "DATE":
+                s = pd.to_datetime(s, errors='coerce').dt.date
+            else:  # VARCHAR
+                s = s.where(pd.notna(s), None).astype(object)
+            out_cols[col] = s
+    ordered_cols = list(type_map.keys())
+    out = pd.DataFrame({c: out_cols.get(c, pd.Series([None] * len(df))) for c in ordered_cols})
+    return out, ordered_cols
+
+
+# ---------------- Write logic ---------------- #
+
+def try_insert(conn: duckdb.DuckDBPyConnection, df: pd.DataFrame, current_id: int = 1) -> bool:
+    df2, cols = coerce_df_to_table_schema(conn, df, current_id)
+    conn.register("df", df2)
+    placeholders = ", ".join(cols)
     try:
-        cursor.executemany(insert_sql, values_list)
-        conn.commit()
-        inserted_count = len(values_list)
-        logger.info(f"Successfully inserted {inserted_count} records")
-        return inserted_count
-    except Exception as e:
-        conn.rollback()
-        logger.error(f"Failed to insert data: {e}")
-        raise
+        conn.execute(f"INSERT INTO washing_machines ({placeholders}) SELECT {placeholders} FROM df")
+        return True
     finally:
-        cursor.close()
+        conn.unregister("df")
+
+
+def append_dataframe(conn: duckdb.DuckDBPyConnection, df: pd.DataFrame, current_id: int = 1):
+    exists = conn.execute(
+        "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='washing_machines'"
+    ).fetchone()[0]
+    if not exists:
+        create_table_with_schema(conn, df)
+    else:
+        ensure_id_column(conn)
+
+    # First attempt
+    try:
+        if try_insert(conn, df, current_id):
+            return
+    except Exception as e:
+        err = str(e)
+        logger.warning(f"First insert attempt failed, relaxing integer columns: {err}")
+
+    # Relax integer columns and retry once
+    relax_integer_columns(conn)
+    if not try_insert(conn, df, current_id):
+        conn.execute("SELECT 1")  # no-op for symmetry
+
+
+# ---------------- Main ---------------- #
 
 def main():
-    """Main function to load all CSV files into the database."""
-    logger.info("Starting washing machine data ingestion...")
-    
-    # Get CSV files
+    logger.info("Starting washing machine data ingestion into DuckDB...")
+
     csv_files = get_csv_files()
     if not csv_files:
-        logger.error("No CSV files found in data/raw/")
         return
+
+    conn = get_connection()
+    total = 0
+    current_id = 1
     
-    logger.info(f"Found {len(csv_files)} CSV files to process")
-    
-    # Connect to database
-    conn = get_db_connection()
-    
-    total_inserted = 0
-    
-    try:
-        for file_path in csv_files:
-            logger.info(f"Processing {os.path.basename(file_path)}...")
-            
-            try:
-                # Load CSV
-                df = load_csv_to_dataframe(file_path)
-                logger.info(f"Loaded {len(df)} rows from {os.path.basename(file_path)}")
-                
-                # Prepare data
-                df = prepare_dataframe_for_db(df)
-                
-                # Insert into database
-                inserted_count = insert_dataframe_to_db(df, conn)
-                total_inserted += inserted_count
-                
-                logger.info(f"Successfully processed {os.path.basename(file_path)}")
-                
-            except Exception as e:
-                logger.error(f"Failed to process {file_path}: {e}")
-                continue
-    
-    finally:
-        conn.close()
-    
-    logger.info(f"Ingestion completed! Total records inserted: {total_inserted}")
+    for path in csv_files:
+        try:
+            df = load_csv_to_dataframe(path)
+            df = prepare_dataframe(df)
+            append_dataframe(conn, df, current_id)
+            total += len(df)
+            current_id += len(df)
+            logger.info(f"Inserted {len(df)} rows from {os.path.basename(path)}")
+        except Exception as e:
+            logger.error(f"Failed to ingest {path}: {e}")
+            continue
+
+    logger.info(f"Ingestion completed. Total rows processed: {total}")
+
 
 if __name__ == "__main__":
     main() 
