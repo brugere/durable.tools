@@ -9,7 +9,7 @@ def get_duckdb_path() -> str:
     return db_path
 
 
-def get_connection(readonly: bool = False) -> duckdb.DuckDBPyConnection:
+def get_connection(readonly: bool = False):
     """Return a DuckDB connection to the on-disk database file."""
     db_path = get_duckdb_path()
     conn = duckdb.connect(db_path, read_only=readonly)

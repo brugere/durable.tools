@@ -10,19 +10,19 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Meilleurs Lave-linge Durables 2025 | Comparatif et Avis',
-  description: 'Découvrez les meilleurs lave-linge durables et réparables en 2025. Comparatif complet avec notes de réparabilité et fiabilité. Achetez en toute confiance.',
-  keywords: 'lave-linge, durabilité, réparabilité, comparatif, 2025, électroménager',
+  title: 'Lave-linge Durables | Solutions pour Investisseurs Immobiliers',
+  description: 'Découvrez les meilleurs lave-linge durables et réparables pour investisseurs immobiliers. Maximisez la valeur de votre propriété.',
+  keywords: 'lave-linge, durabilité, réparabilité, investissement immobilier, électroménager',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   openGraph: {
-    title: 'Meilleurs Lave-linge Durables 2025',
-    description: 'Comparatif complet des lave-linge durables et réparables',
+    title: 'Lave-linge Durables | Solutions pour Investisseurs Immobiliers',
+    description: 'Maximisez la valeur de votre propriété avec nos lave-linge durables',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Meilleurs Lave-linge Durables 2025',
-    description: 'Comparatif complet des lave-linge durables et réparables',
+    title: 'Lave-linge Durables | Solutions pour Investisseurs Immobiliers',
+    description: 'Maximisez la valeur de votre propriété avec nos lave-linge durables',
   },
   robots: {
     index: true,
@@ -44,49 +44,79 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <body className={inter.className}>
-        <div className="min-h-screen bg-gray-50">
-          {/* Colorful Header */}
-          <header className="bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center py-4">
-                <div className="flex items-center">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 font-bold text-lg">⚡</span>
+      <head>
+        <link rel="preconnect" href="https://fonts.gstatic.com/" crossOrigin="" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?display=swap&family=Noto+Sans%3Awght%40400%3B500%3B700%3B900&family=Public+Sans%3Awght%40400%3B500%3B700%3B900"
+        />
+      </head>
+      <body className={inter.className} style={{fontFamily: '"Public Sans", "Noto Sans", sans-serif'}}>
+        <div className="relative flex size-full min-h-screen flex-col bg-white group/design-root overflow-x-hidden">
+          <div className="layout-container flex h-full grow flex-col">
+            <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#f0f2f4] px-10 py-3">
+              <div className="flex items-center gap-8">
+                <div className="flex items-center gap-4 text-[#111418]">
+                  <div className="size-4">
+                    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        d="M42.4379 44C42.4379 44 36.0744 33.9038 41.1692 24C46.8624 12.9336 42.2078 4 42.2078 4L7.01134 4C7.01134 4 11.6577 12.932 5.96912 23.9969C0.876273 33.9029 7.27094 44 7.27094 44L42.4379 44Z"
+                        fill="currentColor"
+                      ></path>
+                    </svg>
+                  </div>
+                  <h2 className="text-[#111418] text-lg font-bold leading-tight tracking-[-0.015em]">Laundry Solutions</h2>
+                </div>
+                <div className="flex items-center gap-9">
+                  <a className="text-[#111418] text-sm font-medium leading-normal" href="#">Produits</a>
+                  <a className="text-[#111418] text-sm font-medium leading-normal" href="#">Services</a>
+                  <a className="text-[#111418] text-sm font-medium leading-normal" href="#">Support</a>
+                  <a className="text-[#111418] text-sm font-medium leading-normal" href="#">À Propos</a>
+                </div>
+              </div>
+              <div className="flex flex-1 justify-end gap-8">
+                <label className="flex flex-col min-w-40 !h-10 max-w-64">
+                  <div className="flex w-full flex-1 items-stretch rounded-lg h-full">
+                    <div
+                      className="text-[#637588] flex border-none bg-[#f0f2f4] items-center justify-center pl-4 rounded-l-lg border-r-0"
+                      data-icon="MagnifyingGlass"
+                      data-size="24px"
+                      data-weight="regular"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                        <path
+                          d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"
+                        ></path>
+                      </svg>
                     </div>
-                    <h1 className="text-2xl font-bold text-white">
-                      Lave-linge Durables
-                    </h1>
-                  </div>
-                </div>
-                <nav className="hidden md:flex space-x-8">
-                  <a href="#" className="text-blue-100 hover:text-white transition-colors">Comparatif</a>
-                  <a href="#" className="text-blue-100 hover:text-white transition-colors">Guides</a>
-                  <a href="#" className="text-blue-100 hover:text-white transition-colors">Avis</a>
-                  <a href="#" className="text-blue-100 hover:text-white transition-colors">Contact</a>
-                </nav>
-                <div className="flex items-center space-x-4">
-                  <div className="relative">
                     <input
-                      type="text"
-                      placeholder="Rechercher..."
-                      className="w-48 px-4 py-2 rounded-lg bg-blue-500 text-white placeholder-blue-200 border border-blue-400 focus:outline-none focus:ring-2 focus:ring-white"
+                      placeholder="Rechercher"
+                      className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#111418] focus:outline-0 focus:ring-0 border-none bg-[#f0f2f4] focus:border-none h-full placeholder:text-[#637588] px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
+                      defaultValue=""
                     />
-                    <span className="absolute right-3 top-2.5 text-blue-200">🔍</span>
                   </div>
-                </div>
+                </label>
+                <button
+                  className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#1773cf] text-white text-sm font-bold leading-normal tracking-[0.015em]"
+                >
+                  <span className="truncate">Contacter les Ventes</span>
+                </button>
               </div>
-            </div>
-          </header>
-          <main>{children}</main>
-          <footer className="bg-white border-t mt-16">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              <div className="text-center text-gray-600">
-                <p>&copy; 2025 Lave-linge Durables. Comparatif indépendant et gratuit.</p>
+            </header>
+            <main>{children}</main>
+            <footer className="flex justify-center">
+              <div className="flex max-w-[960px] flex-1 flex-col">
+                <footer className="flex flex-col gap-6 px-5 py-10 text-center @container">
+                  <div className="flex flex-wrap items-center justify-center gap-6 @[480px]:flex-row @[480px]:justify-around">
+                    <a className="text-[#637588] text-base font-normal leading-normal min-w-40" href="#">Politique de Confidentialité</a>
+                    <a className="text-[#637588] text-base font-normal leading-normal min-w-40" href="#">Conditions d'Utilisation</a>
+                    <a className="text-[#637588] text-base font-normal leading-normal min-w-40" href="#">Nous Contacter</a>
+                  </div>
+                  <p className="text-[#637588] text-base font-normal leading-normal">© 2025 Laundry Solutions. Tous droits réservés.</p>
+                </footer>
               </div>
-            </div>
-          </footer>
+            </footer>
+          </div>
         </div>
       </body>
     </html>
