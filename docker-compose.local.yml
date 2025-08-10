@@ -7,8 +7,8 @@ services:
     environment:
       DUCKDB_PATH: /code/duckdb/washing_machines.duckdb
     volumes: 
-      - ["duckdb-data:/code/duckdb"]
-      - ["./backend:/code"]  # Mount source code for hot reload
+      - "duckdb-data:/code/duckdb"
+      - "./backend:/code"  # Mount source code for hot reload
     ports: ["8000:8000"]
     expose: ["8000"]
     
@@ -20,8 +20,8 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: "http://localhost:8000"
     volumes:
-      - ["./frontend:/app"]  # Mount source code for hot reload
-      - ["/app/node_modules"]  # Preserve node_modules in container
+      - "./frontend:/app"  # Mount source code for hot reload
+      - "/app/node_modules"  # Preserve node_modules in container
       
 volumes:
   duckdb-data:
