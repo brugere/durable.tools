@@ -25,6 +25,8 @@ dist/
 build/
 coverage/
 *.coverage
+backend/duckdb/
+backend/.venv/
 
 # === Secrets & keys ===
 *.pem
