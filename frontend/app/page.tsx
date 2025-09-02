@@ -10,6 +10,8 @@ const MachineResults = dynamic(() => import("@/components/MachineResults"), {
     <div className="text-center py-12">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1773cf] mx-auto"></div>
       <p className="mt-4 text-[#637588]">Recherche en cours...</p>
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1773cf] mx-auto"></div>
+      <p className="mt-4 text-[#637588]">Recherche en cours...</p>
     </div>
   ),
   ssr: false,
@@ -145,6 +147,8 @@ export default function Home({
               </section>
             )}
           </div>
+        </div>
+      </div>
         </div>
       </div>
     </div>

@@ -306,6 +306,10 @@ export default function MachineResults({ searchParams }: MachineResultsProps) {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1773cf] mx-auto"></div>
           <p className="mt-4 text-[#637588]">Recherche en cours...</p>
         </div>
+              <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1773cf] mx-auto"></div>
+          <p className="mt-4 text-[#637588]">Recherche en cours...</p>
+        </div>
     );
   }
 
@@ -321,6 +325,8 @@ export default function MachineResults({ searchParams }: MachineResultsProps) {
   if (!results || results.machines.length === 0) {
     return (
       <div className="text-center py-12">
+        <div className="text-[#637588] text-6xl mb-4">🔍</div>
+        <h3 className="text-xl font-semibold text-[#111418] mb-2">
         <div className="text-[#637588] text-6xl mb-4">🔍</div>
         <h3 className="text-xl font-semibold text-[#111418] mb-2">
           Aucun lave-linge trouvé
@@ -342,11 +348,14 @@ export default function MachineResults({ searchParams }: MachineResultsProps) {
         <div className="flex justify-between items-center mb-4">
           <div>
             <h2 className="text-2xl font-bold text-[#111418]">
+            <h2 className="text-2xl font-bold text-[#111418]">
               Résultats de recherche
             </h2>
             <p className="text-[#637588]">
+            <p className="text-[#637588]">
               {results.total} lave-linge{results.total !== 1 ? 's' : ''} trouvé{results.total !== 1 ? 's' : ''}
               {results.total > results.machines.length && (
+                <span className="text-sm text-[#637588] ml-2">
                 <span className="text-sm text-[#637588] ml-2">
                   (affichage de {results.machines.length} sur {results.total})
                 </span>
@@ -393,6 +402,7 @@ export default function MachineResults({ searchParams }: MachineResultsProps) {
       {/* Load More */}
       {results.has_more && (
         <div className="text-center py-6">
+          <p className="text-sm text-[#637588] mb-4">
           <p className="text-sm text-[#637588] mb-4">
             Plus de résultats disponibles. Affinez votre recherche pour voir plus de modèles.
           </p>
