@@ -4,7 +4,8 @@ npm-debug.log*
 .env.local
 .env.*
 .next/
-
+data/
+frontend/public/
 
 
 # === Python ===

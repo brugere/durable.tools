@@ -248,7 +248,18 @@ def main():
 
     conn = get_connection()
     total = 0
-    current_id = 1
+    # Compute starting ID to avoid primary key collisions if table already exists
+    try:
+        table_exists = conn.execute(
+            "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='washing_machines'"
+        ).fetchone()[0]
+        if table_exists:
+            max_id = conn.execute("SELECT COALESCE(MAX(id), 0) FROM washing_machines").fetchone()[0]
+            current_id = int(max_id) + 1
+        else:
+            current_id = 1
+    except Exception:
+        current_id = 1
     
     for path in csv_files:
         try:

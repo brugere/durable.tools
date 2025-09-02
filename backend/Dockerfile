@@ -1,14 +1,11 @@
 # backend/Dockerfile
 FROM python:3.12-slim
 
-# Install minimal system deps (no Postgres client needed)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+# No system dependencies needed for pre-compiled Python wheels
 
 WORKDIR /code
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --only-binary=all -r requirements.txt
 
 COPY app /code/app
 COPY ingest /code/ingest

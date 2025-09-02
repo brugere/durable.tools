@@ -1,4 +1,4 @@
-// Simple helpers to build Amazon affiliate links
+// Amazon affiliate link helpers
 
 export type AmazonLocale =
   | "fr"
@@ -33,14 +33,12 @@ export function buildAmazonAffiliateSearchUrl({
   locale?: AmazonLocale;
 }): string {
   const host = MARKETPLACE_HOST_BY_LOCALE[locale] || MARKETPLACE_HOST_BY_LOCALE.fr;
-  const keywords = [brand, model || ""].filter(Boolean).join(" ").trim();
-  const url = new URL(`https://${host}/s`);
-  url.searchParams.set("k", keywords);
-  url.searchParams.set("tag", tag);
-  return url.toString();
+  const searchQuery = `${brand} ${model || ""}`.trim();
+  const encodedQuery = encodeURIComponent(searchQuery);
+  return `https://${host}/s?k=${encodedQuery}&tag=${tag}`;
 }
 
-export function buildAmazonAffiliateDetailUrlFromAsin({
+export function buildAmazonAffiliateProductUrl({
   asin,
   tag = "lebrugere-21",
   locale = "fr",
@@ -50,9 +48,48 @@ export function buildAmazonAffiliateDetailUrlFromAsin({
   locale?: AmazonLocale;
 }): string {
   const host = MARKETPLACE_HOST_BY_LOCALE[locale] || MARKETPLACE_HOST_BY_LOCALE.fr;
-  const url = new URL(`https://${host}/dp/${asin}`);
-  url.searchParams.set("tag", tag);
-  return url.toString();
+  return `https://${host}/dp/${asin}?tag=${tag}`;
+}
+
+export function getBestAffiliateLink({
+  brand,
+  model,
+  asin,
+  amazonProductUrl,
+  tag = "lebrugere-21",
+  locale = "fr",
+}: {
+  brand: string;
+  model?: string | null;
+  asin?: string | null;
+  amazonProductUrl?: string | null;
+  tag?: string;
+  locale?: AmazonLocale;
+}): { url: string; type: "product" | "search"; isDirect: boolean } {
+  // If we have a direct Amazon product URL, use it
+  if (amazonProductUrl) {
+    return {
+      url: amazonProductUrl,
+      type: "product",
+      isDirect: true
+    };
+  }
+  
+  // If we have an ASIN, build a direct product link
+  if (asin) {
+    return {
+      url: buildAmazonAffiliateProductUrl({ asin, tag, locale }),
+      type: "product", 
+      isDirect: true
+    };
+  }
+  
+  // Fallback to search URL
+  return {
+    url: buildAmazonAffiliateSearchUrl({ brand, model, tag, locale }),
+    type: "search",
+    isDirect: false
+  };
 }
 
 

@@ -2,48 +2,51 @@
 
 import { fetchMachineDetails } from "@/lib/api";
 import { useState, useEffect } from "react";
-import { buildAmazonAffiliateSearchUrl } from "@/lib/affiliate";
+import { getBestAffiliateLink } from "@/lib/affiliate";
 import { useRouter } from "next/navigation";
 import ScoreRadarChart from "./ScoreRadarChart";
 import SimilarMachines from "./SimilarMachines";
 
-interface MachineDetails {
-  id: number;
-  id_unique: string;
-  nom_modele: string;
+interface Machine {
+  id?: number | null;
+  nom_modele?: string | null;
   nom_metteur_sur_le_marche: string;
-  date_calcul: string;
-  note_reparabilite: number;
-  note_fiabilite: number;
-  note_id: number;
-  categorie_produit: string;
-  url_tableau_detail_notation?: string;
-  
+  date_calcul?: string | null;
+  note_reparabilite?: number | null;
+  note_fiabilite?: number | null;
+  note_id?: number | null;
+  categorie_produit?: string | null;
+  url_tableau_detail_notation?: string | null;
+  id_unique?: string | null;
+  // Amazon product data
+  amazon_asin?: string | null;
+  amazon_product_url?: string | null;
+  amazon_image_url?: string | null;
+  amazon_price_eur?: number | null;
+  amazon_product_title?: string | null;
   // Detailed scores
-  note_A_c1?: number;
-  note_A_c2?: number;
-  note_A_c3?: number;
-  note_A_c4?: number;
-  note_B_c1?: number;
-  note_B_c2?: number;
-  note_B_c3?: number;
-  
-  // Documentation
-  accessibilite_compteur_usage?: string;
-  lien_documentation_professionnels?: string;
-  lien_documentation_particuliers?: string;
-  
+  note_A_c1?: number | null;
+  note_A_c2?: number | null;
+  note_A_c3?: number | null;
+  note_A_c4?: number | null;
+  note_B_c1?: number | null;
+  note_B_c2?: number | null;
+  note_B_c3?: number | null;
+  // Documentation and accessibility
+  accessibilite_compteur_usage?: string | null;
+  lien_documentation_professionnels?: string | null;
+  lien_documentation_particuliers?: string | null;
   // Spare parts data
-  nom_piece_1_liste_2?: string;
-  nom_piece_2_liste_2?: string;
-  nom_piece_3_liste_2?: string;
-  nom_piece_4_liste_2?: string;
-  nom_piece_5_liste_2?: string;
-  etape_demontage_piece_1_liste_2?: string;
-  etape_demontage_piece_2_liste_2?: string;
-  etape_demontage_piece_3_liste_2?: string;
-  etape_demontage_piece_4_liste_2?: string;
-  etape_demontage_piece_5_liste_2?: string;
+  nom_piece_1_liste_2?: string | null;
+  nom_piece_2_liste_2?: string | null;
+  nom_piece_3_liste_2?: string | null;
+  nom_piece_4_liste_2?: string | null;
+  nom_piece_5_liste_2?: string | null;
+  etape_demontage_piece_1_liste_2?: string | null;
+  etape_demontage_piece_2_liste_2?: string | null;
+  etape_demontage_piece_3_liste_2?: string | null;
+  etape_demontage_piece_4_liste_2?: string | null;
+  etape_demontage_piece_5_liste_2?: string | null;
 }
 
 interface MachineDetailsProps {
@@ -71,14 +74,27 @@ function getScoreLevel(score: number) {
   return "Faible";
 }
 
-// Build an Amazon affiliate search link for brand + model
-function getAffiliateLink(brand: string, model: string) {
-  const url = buildAmazonAffiliateSearchUrl({ brand, model, locale: "fr" });
-  return { name: "Amazon", url, icon: "🛒" } as const;
+// Build the best available Amazon affiliate link
+function getAffiliateLink(machine: Machine) {
+  const linkData = getBestAffiliateLink({
+    brand: machine.nom_metteur_sur_le_marche,
+    model: machine.nom_modele ?? machine.id_unique ?? "",
+    asin: machine.amazon_asin,
+    amazonProductUrl: machine.amazon_product_url,
+    locale: "fr"
+  });
+  
+  return { 
+    name: linkData.isDirect ? "Acheter sur Amazon" : "Rechercher sur Amazon",
+    url: linkData.url, 
+    icon: linkData.isDirect ? "🛒" : "🔍",
+    isDirect: linkData.isDirect,
+    price: machine.amazon_price_eur
+  } as const;
 }
 
 export default function MachineDetails({ machineId }: MachineDetailsProps) {
-  const [machine, setMachine] = useState<MachineDetails | null>(null);
+  const [machine, setMachine] = useState<Machine | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -131,7 +147,7 @@ export default function MachineDetails({ machineId }: MachineDetailsProps) {
     );
   }
 
-  const retailer = getAffiliateLink(machine.nom_metteur_sur_le_marche, machine.nom_modele);
+  const retailer = getAffiliateLink(machine);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -157,7 +173,7 @@ export default function MachineDetails({ machineId }: MachineDetailsProps) {
         {/* Main Product Info */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Product Image & Basic Info */}
+            {/* Product Image Section */}
             <div className="lg:col-span-1">
               <div className="bg-gray-100 rounded-lg p-8 text-center mb-6">
                 <div className="text-8xl mb-4">🏠</div>
@@ -175,85 +191,55 @@ export default function MachineDetails({ machineId }: MachineDetailsProps) {
                   Référence: {machine.id_unique}
                 </p>
                 <p className="text-sm text-gray-500">
-                  Date d'évaluation: {new Date(machine.date_calcul).toLocaleDateString('fr-FR')}
+                  Date d'évaluation: {new Date(machine.date_calcul || "").toLocaleDateString('fr-FR')}
                 </p>
               </div>
             </div>
 
-            {/* Scores Overview */}
+            {/* Buy Section */}
             <div className="lg:col-span-2">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                Indices de durabilité
+                Acheter ce produit
               </h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Repairability Score */}
-                <div className={`rounded-lg p-6 ${getScoreColor(machine.note_reparabilite || 0)}`}>
-                  <div className="text-center">
-                    <div className="text-4xl font-bold mb-2">
-                      {machine.note_reparabilite?.toFixed(1) || 'N/A'}/10
-                    </div>
-                    <div className="text-sm font-medium mb-1">
-                      Réparabilité
-                    </div>
-                    <div className="text-xs opacity-75">
-                      {getScoreLevel(machine.note_reparabilite || 0)}
-                    </div>
-                  </div>
+              {/* Price if available */}
+              {machine.amazon_price_eur && (
+                <div className="text-2xl font-bold text-green-600 mb-4">
+                  {machine.amazon_price_eur.toFixed(2)} €
                 </div>
-
-                {/* Reliability Score */}
-                <div className={`rounded-lg p-6 ${getScoreColor(machine.note_fiabilite || 0)}`}>
-                  <div className="text-center">
-                    <div className="text-4xl font-bold mb-2">
-                      {machine.note_fiabilite?.toFixed(1) || 'N/A'}/10
-                    </div>
-                    <div className="text-sm font-medium mb-1">
-                      Fiabilité
-                    </div>
-                    <div className="text-xs opacity-75">
-                      {getScoreLevel(machine.note_fiabilite || 0)}
-                    </div>
-                  </div>
+              )}
+              
+              {/* Amazon product title if available */}
+              {machine.amazon_product_title && (
+                <div className="text-sm text-gray-600 mb-4">
+                  {machine.amazon_product_title}
                 </div>
-
-                {/* Global Score */}
-                <div className={`rounded-lg p-6 ${getScoreColor(machine.note_id || 0)}`}>
-                  <div className="text-center">
-                    <div className="text-4xl font-bold mb-2">
-                      {machine.note_id?.toFixed(1) || 'N/A'}/10
-                    </div>
-                    <div className="text-sm font-medium mb-1">
-                      Note globale
-                    </div>
-                    <div className="text-xs opacity-75">
-                      {getScoreLevel(machine.note_id || 0)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="mt-6 flex flex-col sm:flex-row gap-4">
+              )}
+              
+              <div className="space-y-3">
+                {/* Amazon Buy Button */}
                 <a
                   href={retailer.url}
                   target="_blank"
-                  rel="noopener noreferrer sponsored"
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg text-center transition-colors flex items-center justify-center"
+                  rel="sponsored"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white text-center py-3 px-6 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-3"
                 >
-                  <span className="mr-2">{retailer.icon}</span>
-                  Acheter sur {retailer.name}
+                  <span className="text-xl">{retailer.icon}</span>
+                  <span>{retailer.name}</span>
                 </a>
                 
-                {machine.url_tableau_detail_notation && (
-                  <a
-                    href={machine.url_tableau_detail_notation}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg text-center transition-colors"
-                  >
-                    📊 Voir le rapport complet
-                  </a>
+                {/* Direct link indicator */}
+                {retailer.isDirect && (
+                  <div className="text-sm text-green-600 text-center">
+                    ✓ Lien direct vers le produit Amazon
+                  </div>
+                )}
+                
+                {/* Fallback search info */}
+                {!retailer.isDirect && (
+                  <div className="text-sm text-gray-500 text-center">
+                    🔍 Recherche Amazon pour "{machine.nom_metteur_sur_le_marche} {machine.nom_modele}"
+                  </div>
                 )}
               </div>
             </div>
@@ -336,10 +322,10 @@ export default function MachineDetails({ machineId }: MachineDetailsProps) {
               repairability: machine.note_reparabilite || 0,
               reliability: machine.note_fiabilite || 0,
               global: machine.note_id || 0,
-              demontability: machine.note_A_c1,
-              partsAvailability: machine.note_A_c2,
-              partsPrice: machine.note_A_c3,
-              documentation: machine.note_A_c4
+              demontability: machine.note_A_c1 || 0,
+              partsAvailability: machine.note_A_c2 || 0,
+              partsPrice: machine.note_A_c3 || 0,
+              documentation: machine.note_A_c4 || 0
             }}
           />
         </div>

@@ -5,14 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Use absolute import for helpers from fetch_wmdi.py
-from ingest.fetch_wmdi import (
-    load_washing_machine_data, 
-    quick_insights, 
-    NpEncoder, 
-    fetch_washing_machine_datasets,
-    get_washing_machine_datasets_summary
-)
+# No need to import ingest functions for basic API functionality
 
 # Import search functionality
 from .search import (
@@ -231,7 +224,10 @@ def get_mock_search_results(q=None, brand=None, model=None, min_repairability=No
             filtered_machines.sort(key=lambda x: x["note_id"], reverse=True)
         elif any(keyword in query_lower for keyword in ["hublot", "top", "front", "charge"]):
             # Filter by loading type
-            filtered_machines = [m for m in filtered_machines if keyword in m["nom_modele"].lower()]
+            filtered_machines = [
+                m for m in filtered_machines
+                if any(k in m["nom_modele"].lower() for k in ["hublot", "top", "front", "charge"])
+            ]
         else:
             # General text search
             filtered_machines = [m for m in filtered_machines if 

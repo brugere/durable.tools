@@ -8,6 +8,7 @@ import re
 import duckdb
 
 from .duckdb_utils import get_connection
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -90,12 +91,15 @@ def search_washing_machines(
         conn = get_connection(readonly=True)
 
         allowed_sort_fields = {
+            "id",
             "nom_modele",
             "nom_metteur_sur_le_marche",
             "note_reparabilite",
             "note_fiabilite",
             "date_calcul",
             "note_id",
+            "amazon_price_eur",
+            "price_per_durability",
         }
         if sort_by not in allowed_sort_fields:
             sort_by = "note_reparabilite"
@@ -109,6 +113,11 @@ def search_washing_machines(
         count_sql = f"SELECT COUNT(*) AS cnt FROM washing_machines WHERE {where_clause}"
         total_count = conn.execute(count_sql, params).fetchone()[0]
 
+        # Map sort_by to SQL (support computed metric for value)
+        sort_expression = sort_by
+        if sort_by == "price_per_durability":
+            sort_expression = "(amazon_price_eur / NULLIF(note_id, 0))"
+
         select_sql = f"""
             SELECT
                 id,
@@ -121,27 +130,34 @@ def search_washing_machines(
                 note_id,
                 categorie_produit,
                 url_tableau_detail_notation,
-                accessibilite_compteur_usage,
-                lien_documentation_professionnels,
-                lien_documentation_particuliers,
                 note_A_c1, note_A_c2, note_A_c3, note_A_c4,
                 note_B_c1, note_B_c2, note_B_c3,
                 nom_piece_1_liste_2, nom_piece_2_liste_2, nom_piece_3_liste_2,
-                nom_piece_4_liste_2, nom_piece_5_liste_2
+                nom_piece_4_liste_2, nom_piece_5_liste_2,
+                amazon_asin,
+                amazon_product_url,
+                amazon_image_url,
+                amazon_price_eur,
+                amazon_product_title
             FROM washing_machines
             WHERE {where_clause}
-            ORDER BY {sort_by} {sort_order}
+            ORDER BY {sort_expression} {sort_order}
             LIMIT ? OFFSET ?
         """
         rows = conn.execute(select_sql, params + [limit, offset]).fetchall()
         cols = [d[0] for d in conn.description]
         machines = [dict(zip(cols, r)) for r in rows]
 
-        # Ensure ISO date strings
+        # Ensure ISO date strings; handle str or date/datetime
         for m in machines:
-            if m.get("date_calcul") is not None:
-                # DuckDB returns datetime/date as Python date/datetime; isoformat is fine
-                m["date_calcul"] = m["date_calcul"].isoformat()
+            d = m.get("date_calcul")
+            if d is None:
+                continue
+            if isinstance(d, (datetime.date, datetime.datetime)):
+                m["date_calcul"] = d.isoformat()
+            elif isinstance(d, str):
+                # Leave as-is if already a string
+                m["date_calcul"] = d
 
         return {
             "machines": machines,

@@ -4,7 +4,7 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     environment:
       DUCKDB_PATH: /code/duckdb/washing_machines.duckdb
-    volumes: ["duckdb-data:/code/duckdb"]
+    volumes: ["./backend/duckdb:/code/duckdb"]
     expose: ["8000"]
   frontend:
     build: ./frontend

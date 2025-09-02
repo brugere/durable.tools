@@ -6,9 +6,11 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     environment:
       DUCKDB_PATH: /code/duckdb/washing_machines.duckdb
+      FRONTEND_PUBLIC_DIR: /public
     volumes: 
       - "./backend/duckdb:/code/duckdb"  # Mount local database directory
       - "./backend:/code"  # Mount source code for hot reload
+      - "./frontend/public:/public"  # Share frontend public assets for image writes
     ports: ["8000:8000"]
     expose: ["8000"]
     
@@ -21,6 +23,8 @@ services:
     ports: ["3000:3000"]
     environment:
       NEXT_PUBLIC_API_URL: "http://localhost:8000"
+      # Expose to backend via shared volume path
+      FRONTEND_PUBLIC_DIR: "/public"
     volumes:
       - "./frontend:/app"  # Mount source code for hot reload
       - "/app/node_modules"  # Preserve node_modules in container
